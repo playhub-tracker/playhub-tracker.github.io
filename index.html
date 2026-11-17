@@ -186,6 +186,7 @@
         let donneesGlobales = { tournois: [], joueurs: [] };
         let autoRefreshTimer = null;
         let syncEnCours = false;
+        let requetesEcritureEnCours = 0;
 
         function demarrerAutoRefresh() {
             arreterAutoRefresh();
@@ -193,6 +194,7 @@
                 if (
                     document.visibilityState === 'visible' &&
                     motDePasseActuel &&
+                    requetesEcritureEnCours === 0 &&
                     !document.getElementById('app-container').classList.contains('hidden')
                 ) {
                     chargerDonnees(null, false, true);
@@ -211,6 +213,7 @@
             if (
                 document.visibilityState === 'visible' &&
                 motDePasseActuel &&
+                requetesEcritureEnCours === 0 &&
                 !document.getElementById('app-container').classList.contains('hidden')
             ) {
                 chargerDonnees(null, false, true);
@@ -293,6 +296,18 @@
             }
         }
 
+        function appliquerDonneesRecues(data) {
+            donneesGlobales = data;
+
+            document.getElementById('val-date-run').textContent = data.compteurs.date || "Aucune run";
+            document.getElementById('val-req-session').textContent = data.compteurs.reqSession || "0";
+            document.getElementById('val-req-jour').textContent = data.compteurs.reqJour || "0";
+
+            renderRecap();
+            renderGestionTournois();
+            renderGestionJoueurs();
+        }
+
         // --- LECTURE ---
         async function chargerDonnees(pwdTest = null, depuisLogin = false, silencieux = false) {
             if (syncEnCours && silencieux) return;
@@ -331,15 +346,9 @@
                 localStorage.setItem(STORAGE_KEY, pwdAUtiliser);
                 afficherApplication();
 
-                donneesGlobales = data;
-
-                document.getElementById('val-date-run').textContent = data.compteurs.date || "Aucune run";
-                document.getElementById('val-req-session').textContent = data.compteurs.reqSession || "0";
-                document.getElementById('val-req-jour').textContent = data.compteurs.reqJour || "0";
-
-                renderRecap();
-                renderGestionTournois();
-                renderGestionJoueurs();
+                if (requetesEcritureEnCours === 0) {
+                    appliquerDonneesRecues(data);
+                }
 
                 demarrerAutoRefresh();
 
@@ -352,42 +361,81 @@
                 console.error(error);
             } finally {
                 syncEnCours = false;
-                if (!silencieux) {
+                if (!silencieux && requetesEcritureEnCours === 0) {
                     toggleLoader(false);
-                } else {
+                } else if (requetesEcritureEnCours === 0) {
                     document.getElementById('icon-refresh').classList.remove('animate-spin');
                 }
             }
         }
 
-        // --- ÉCRITURE ---
+        // --- ÉCRITURE INSTANTANÉE (OPTIMISTIC UI) ---
         async function posterAction(action, payloadDonnees) {
+            requetesEcritureEnCours++;
             arreterAutoRefresh();
-            toggleLoader(true, "Enregistrement en cours...");
+            toggleLoader(true, "Enregistrement en arrière-plan...");
+
             try {
                 const payload = { action: action, pwd: motDePasseActuel, ...payloadDonnees };
                 
-                await fetch(SCRIPT_URL, {
+                const response = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'text/plain;charset=utf-8'
                     },
                     body: JSON.stringify(payload)
                 });
-                
-                setTimeout(() => chargerDonnees(), 1500);
+
+                const res = await response.json();
+
+                if (res.error === "unauthorized") {
+                    requetesEcritureEnCours = 0;
+                    deconnexion();
+                    return;
+                }
+
+                if (res.error) {
+                    throw new Error(res.error);
+                }
+
+                requetesEcritureEnCours = Math.max(0, requetesEcritureEnCours - 1);
+
+                // Quand la dernière action en attente se termine, on synchronise les numéros de lignes exacts
+                if (requetesEcritureEnCours === 0) {
+                    if (res.data) {
+                        appliquerDonneesRecues(res.data);
+                    }
+                    toggleLoader(false);
+                    demarrerAutoRefresh();
+                }
 
             } catch (error) {
-                alert("Erreur lors de l'enregistrement.");
-                toggleLoader(false);
-                demarrerAutoRefresh();
+                requetesEcritureEnCours = Math.max(0, requetesEcritureEnCours - 1);
+                if (requetesEcritureEnCours === 0) {
+                    toggleLoader(false);
+                    alert("Erreur lors de l'enregistrement, resynchronisation...");
+                    chargerDonnees(null, false, true);
+                }
+                console.error(error);
             }
         }
 
-        function toggleItem(type, ligne, checkbox) {
+        function toggleItem(type, index, checkbox) {
             const estCoche = checkbox.checked;
-            posterAction(type === 'tournoi' ? 'toggleTournoi' : 'toggleJoueur', { ligne: ligne, valeur: estCoche });
+
+            if (type === 'tournoi') {
+                const t = donneesGlobales.tournois[index];
+                if (!t) return;
+                t.actif = estCoche;
+                renderRecap();
+                posterAction('toggleTournoi', { ligne: t.ligne, id: t.id, valeur: estCoche });
+            } else {
+                const j = donneesGlobales.joueurs[index];
+                if (!j) return;
+                j.actif = estCoche;
+                renderRecap();
+                posterAction('toggleJoueur', { ligne: j.ligne, pseudo: j.pseudo, valeur: estCoche });
+            }
         }
 
         function ajouterTournoi() {
@@ -401,6 +449,18 @@
             }
 
             input.value = "";
+
+            // Affichage immédiat dans l'interface
+            donneesGlobales.tournois.push({
+                ligne: -1,
+                actif: true,
+                id: val,
+                nom: `Tournoi ${val}`,
+                statut: ""
+            });
+            renderGestionTournois();
+            renderRecap();
+
             posterAction('addTournoi', { id: val });
         }
 
@@ -409,13 +469,39 @@
             const val = input.value.trim();
             if (!val) return;
             input.value = "";
+
+            // Affichage immédiat dans l'interface
+            donneesGlobales.joueurs.push({
+                ligne: -1,
+                actif: true,
+                pseudo: val,
+                tournois: ""
+            });
+            renderGestionJoueurs();
+            renderRecap();
+
             posterAction('addJoueur', { pseudo: val });
         }
 
-        function supprimerItem(type, ligne, nom) {
-            const element = type === 'tournoi' ? 'le tournoi' : 'le joueur';
-            if (confirm(`⚠️ Confirmation : Supprimer définitivement ${element} "${nom}" de Google Sheets ?`)) {
-                posterAction(type === 'tournoi' ? 'deleteTournoi' : 'deleteJoueur', { ligne: ligne });
+        function supprimerItem(type, index) {
+            if (type === 'tournoi') {
+                const t = donneesGlobales.tournois[index];
+                if (!t) return;
+                if (!confirm(`⚠️ Confirmation : Supprimer définitivement le tournoi "${t.nom}" de Google Sheets ?`)) return;
+
+                donneesGlobales.tournois.splice(index, 1);
+                renderGestionTournois();
+                renderRecap();
+                posterAction('deleteTournoi', { ligne: t.ligne, id: t.id });
+            } else {
+                const j = donneesGlobales.joueurs[index];
+                if (!j) return;
+                if (!confirm(`⚠️ Confirmation : Supprimer définitivement le joueur "${j.pseudo}" de Google Sheets ?`)) return;
+
+                donneesGlobales.joueurs.splice(index, 1);
+                renderGestionJoueurs();
+                renderRecap();
+                posterAction('deleteJoueur', { ligne: j.ligne, pseudo: j.pseudo });
             }
         }
 
@@ -438,7 +524,7 @@
 
                 let badgeStatut = t.statut === "IN_PROGRESS" 
                     ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-900/40 text-green-400 border border-green-800 animate-pulse">LIVE</span>'
-                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">${t.statut || 'INCONNU'}</span>`;
+                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">${t.statut || 'EN ATTENTE'}</span>`;
 
                 let htmlCard = `
                     <div class="bg-dark-800 rounded-xl border border-dark-700 overflow-hidden">
@@ -466,7 +552,7 @@
             });
         }
 
-        function createToggleRow(titre, sousTitre, actif, ligne, type, urlPart = null) {
+        function createToggleRow(titre, sousTitre, actif, index, type, urlPart = null) {
             const textHTML = urlPart 
                 ? `<a href="${urlPart}" target="_blank" rel="noopener" class="font-medium text-white text-sm hover:text-blue-400 hover:underline flex items-center gap-1.5">${titre} <i class="ph ph-arrow-square-out text-xs text-slate-500"></i></a>`
                 : `<div class="font-medium text-white text-sm truncate">${titre}</div>`;
@@ -480,11 +566,11 @@
                     <div class="flex items-center gap-4">
                         <!-- Switch Actif -->
                         <div class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in">
-                            <input type="checkbox" name="toggle" id="toggle-${type}-${ligne}" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-600 transition-all duration-300" ${actif ? 'checked' : ''} onchange="toggleItem('${type}', ${ligne}, this)"/>
-                            <label for="toggle-${type}-${ligne}" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-700 cursor-pointer transition-colors duration-300"></label>
+                            <input type="checkbox" name="toggle" id="toggle-${type}-${index}" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-600 transition-all duration-300" ${actif ? 'checked' : ''} onchange="toggleItem('${type}', ${index}, this)"/>
+                            <label for="toggle-${type}-${index}" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-700 cursor-pointer transition-colors duration-300"></label>
                         </div>
                         <!-- Bouton Poubelle -->
-                        <button onclick="supprimerItem('${type}', ${ligne}, '${titre.replace(/'/g, "\\'")}')" class="text-slate-500 hover:text-red-400 p-1.5 hover:bg-slate-700/50 rounded-lg transition-colors" title="Supprimer définitivement">
+                        <button onclick="supprimerItem('${type}', ${index})" class="text-slate-500 hover:text-red-400 p-1.5 hover:bg-slate-700/50 rounded-lg transition-colors" title="Supprimer définitivement">
                             <i class="ph ph-trash text-lg"></i>
                         </button>
                     </div>
@@ -495,8 +581,8 @@
         function renderGestionTournois() {
             const container = document.getElementById('liste-gestion-tournois');
             container.innerHTML = "";
-            donneesGlobales.tournois.forEach(t => {
-                container.innerHTML += createToggleRow(t.nom, `ID: ${t.id}`, t.actif, t.ligne, 'tournoi', `https://tcg.ravensburgerplay.com/events/${t.id}`);
+            donneesGlobales.tournois.forEach((t, index) => {
+                container.innerHTML += createToggleRow(t.nom, `ID: ${t.id}`, t.actif, index, 'tournoi', `https://tcg.ravensburgerplay.com/events/${t.id}`);
             });
             if (donneesGlobales.tournois.length === 0) {
                 container.innerHTML = '<div class="p-4 text-center text-sm text-slate-500 italic">Aucun tournoi enregistré.</div>';
@@ -506,8 +592,8 @@
         function renderGestionJoueurs() {
             const container = document.getElementById('liste-gestion-joueurs');
             container.innerHTML = "";
-            donneesGlobales.joueurs.forEach(j => {
-                container.innerHTML += createToggleRow(j.pseudo, null, j.actif, j.ligne, 'joueur');
+            donneesGlobales.joueurs.forEach((j, index) => {
+                container.innerHTML += createToggleRow(j.pseudo, null, j.actif, index, 'joueur');
             });
             if (donneesGlobales.joueurs.length === 0) {
                 container.innerHTML = '<div class="p-4 text-center text-sm text-slate-500 italic">Aucun joueur enregistré.</div>';
