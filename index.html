@@ -150,10 +150,10 @@
             <div id="view-tournois" class="hidden">
                 <div class="bg-dark-800 rounded-xl p-4 border border-dark-700 mb-6">
                     <h3 class="font-bold text-white mb-3">Ajouter un tournoi</h3>
-                    <div class="flex gap-2">
+                    <form onsubmit="ajouterTournoi(event)" class="flex gap-2">
                         <input type="text" id="input-new-tournoi" placeholder="ID (ex: 1254364) ou lien RPH..." class="flex-1 bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white placeholder-slate-500">
-                        <button onclick="ajouterTournoi()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Ajouter</button>
-                    </div>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Ajouter</button>
+                    </form>
                 </div>
 
                 <h3 class="text-sm font-bold text-slate-400 mb-3 tracking-wider">GESTION DES TOURNOIS</h3>
@@ -164,10 +164,10 @@
             <div id="view-joueurs" class="hidden">
                 <div class="bg-dark-800 rounded-xl p-4 border border-dark-700 mb-6">
                     <h3 class="font-bold text-white mb-3">Ajouter un joueur</h3>
-                    <div class="flex gap-2">
+                    <form onsubmit="ajouterJoueur(event)" class="flex gap-2">
                         <input type="text" id="input-new-joueur" placeholder="Pseudo PlayHub exact..." class="flex-1 bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white placeholder-slate-500">
-                        <button onclick="ajouterJoueur()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Ajouter</button>
-                    </div>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Ajouter</button>
+                    </form>
                 </div>
 
                 <h3 class="text-sm font-bold text-slate-400 mb-3 tracking-wider">GESTION DES JOUEURS</h3>
@@ -438,7 +438,8 @@
             }
         }
 
-        function ajouterTournoi() {
+        function ajouterTournoi(event) {
+            if (event) event.preventDefault();
             const input = document.getElementById('input-new-tournoi');
             let val = input.value.trim();
             if (!val) return;
@@ -464,7 +465,8 @@
             posterAction('addTournoi', { id: val });
         }
 
-        function ajouterJoueur() {
+        function ajouterJoueur(event) {
+            if (event) event.preventDefault();
             const input = document.getElementById('input-new-joueur');
             const val = input.value.trim();
             if (!val) return;
