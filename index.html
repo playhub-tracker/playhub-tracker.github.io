@@ -93,7 +93,7 @@
                     <h1 class="font-bold text-lg text-white">Playhub Tracker</h1>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="chargerDonnees()" id="btn-refresh" title="Actualiser" class="bg-slate-700 hover:bg-slate-600 p-2 rounded-full transition-colors flex items-center justify-center h-10 w-10">
+                    <button onclick="chargerDonnees()" id="btn-refresh" title="Actualiser (auto toutes les 30s)" class="bg-slate-700 hover:bg-slate-600 p-2 rounded-full transition-colors flex items-center justify-center h-10 w-10">
                         <i class="ph ph-arrows-clockwise text-xl" id="icon-refresh"></i>
                     </button>
                     <button onclick="deconnexion()" title="Verrouiller" class="bg-slate-800 hover:bg-red-900/40 text-slate-400 hover:text-red-300 border border-dark-700 p-2 rounded-full transition-colors flex items-center justify-center h-10 w-10">
@@ -180,11 +180,45 @@
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxaGtBaAC_V-j8fZ1Nrz80pmcJn7Ru8FBo_5p9VZJtf5nlb39HcWyYMI4DjDwDrFdL5/exec';
         const STORAGE_KEY = 'playhub_tracker_pwd';
+        const AUTO_REFRESH_MS = 30000;
 
         let motDePasseActuel = localStorage.getItem(STORAGE_KEY) || '';
         let donneesGlobales = { tournois: [], joueurs: [] };
+        let autoRefreshTimer = null;
+        let syncEnCours = false;
+
+        function demarrerAutoRefresh() {
+            arreterAutoRefresh();
+            autoRefreshTimer = setInterval(() => {
+                if (
+                    document.visibilityState === 'visible' &&
+                    motDePasseActuel &&
+                    !document.getElementById('app-container').classList.contains('hidden')
+                ) {
+                    chargerDonnees(null, false, true);
+                }
+            }, AUTO_REFRESH_MS);
+        }
+
+        function arreterAutoRefresh() {
+            if (autoRefreshTimer) {
+                clearInterval(autoRefreshTimer);
+                autoRefreshTimer = null;
+            }
+        }
+
+        document.addEventListener('visibilitychange', () => {
+            if (
+                document.visibilityState === 'visible' &&
+                motDePasseActuel &&
+                !document.getElementById('app-container').classList.contains('hidden')
+            ) {
+                chargerDonnees(null, false, true);
+            }
+        });
 
         function afficherEcranConnexion(messageErreur = "") {
+            arreterAutoRefresh();
             document.getElementById('app-container').classList.add('hidden');
             document.getElementById('login-screen').classList.remove('hidden');
             const errEl = document.getElementById('login-error');
@@ -202,6 +236,7 @@
         }
 
         function deconnexion() {
+            arreterAutoRefresh();
             localStorage.removeItem(STORAGE_KEY);
             motDePasseActuel = '';
             donneesGlobales = { tournois: [], joueurs: [] };
@@ -223,7 +258,7 @@
             spinner.classList.remove('hidden');
             document.getElementById('login-error').classList.add('hidden');
 
-            await chargerDonnees(pwdSaisi, true);
+            await chargerDonnees(pwdSaisi, true, false);
 
             btn.disabled = false;
             btnText.textContent = "Déverrouiller";
@@ -259,15 +294,21 @@
         }
 
         // --- LECTURE ---
-        async function chargerDonnees(pwdTest = null, depuisLogin = false) {
+        async function chargerDonnees(pwdTest = null, depuisLogin = false, silencieux = false) {
+            if (syncEnCours && silencieux) return;
+
             const pwdAUtiliser = pwdTest !== null ? pwdTest : motDePasseActuel;
             if (!pwdAUtiliser) {
                 afficherEcranConnexion();
                 return;
             }
 
-            if (!depuisLogin) {
+            syncEnCours = true;
+
+            if (!depuisLogin && !silencieux) {
                 toggleLoader(true, "Synchronisation avec Google Sheets...");
+            } else if (silencieux) {
+                document.getElementById('icon-refresh').classList.add('animate-spin');
             }
 
             try {
@@ -300,20 +341,28 @@
                 renderGestionTournois();
                 renderGestionJoueurs();
 
+                demarrerAutoRefresh();
+
             } catch (error) {
                 if (depuisLogin) {
                     afficherEcranConnexion("Impossible de joindre Google Sheets.");
-                } else {
+                } else if (!silencieux) {
                     alert("Erreur de connexion à Google Sheets.");
                 }
                 console.error(error);
             } finally {
-                toggleLoader(false);
+                syncEnCours = false;
+                if (!silencieux) {
+                    toggleLoader(false);
+                } else {
+                    document.getElementById('icon-refresh').classList.remove('animate-spin');
+                }
             }
         }
 
         // --- ÉCRITURE ---
         async function posterAction(action, payloadDonnees) {
+            arreterAutoRefresh();
             toggleLoader(true, "Enregistrement en cours...");
             try {
                 const payload = { action: action, pwd: motDePasseActuel, ...payloadDonnees };
@@ -332,6 +381,7 @@
             } catch (error) {
                 alert("Erreur lors de l'enregistrement.");
                 toggleLoader(false);
+                demarrerAutoRefresh();
             }
         }
 
@@ -465,7 +515,7 @@
         }
 
         if (motDePasseActuel) {
-            chargerDonnees(motDePasseActuel, true);
+            chargerDonnees(motDePasseActuel, true, false);
         }
     </script>
 </body>
