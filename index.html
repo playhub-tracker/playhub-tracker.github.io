@@ -12,23 +12,21 @@
                 extend: {
                     colors: {
                         dark: {
-                            900: '#0F172A', // Background principal
-                            800: '#1E293B', // Background des cartes
-                            700: '#334155'  // Bordures
+                            900: '#0F172A',
+                            800: '#1E293B',
+                            700: '#334155'
                         }
                     }
                 }
             }
         }
     </script>
-    <!-- Icônes Phosphor pour un look moderne -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
         .tab-active { border-bottom: 2px solid #3b82f6; color: #60a5fa; }
         .tab-inactive { color: #94a3b8; }
         
-        /* Toggle Switch Custom */
         .toggle-checkbox:checked {
             right: 0;
             border-color: #10b981;
@@ -52,104 +50,181 @@
 </head>
 <body class="bg-dark-900 text-slate-200 min-h-screen pb-10">
 
-    <!-- En-tête -->
-    <header class="bg-dark-800 border-b border-dark-700 sticky top-0 z-10">
-        <div class="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-2">
-                <i class="ph-fill ph-discord-logo text-[#5865F2] text-2xl"></i>
-                <h1 class="font-bold text-lg text-white">Playhub Tracker</h1>
-            </div>
-            <button onclick="chargerDonnees()" id="btn-refresh" class="bg-slate-700 hover:bg-slate-600 p-2 rounded-full transition-colors flex items-center justify-center h-10 w-10">
-                <i class="ph ph-arrows-clockwise text-xl" id="icon-refresh"></i>
-            </button>
-        </div>
-        
-        <!-- Navigation Onglets -->
-        <div class="max-w-3xl mx-auto px-4 flex gap-6 text-sm font-medium mt-2">
-            <button onclick="switchTab('recap')" id="tab-recap" class="pb-3 tab-active">Récapitulatif</button>
-            <button onclick="switchTab('tournois')" id="tab-tournois" class="pb-3 tab-inactive">Tournois</button>
-            <button onclick="switchTab('joueurs')" id="tab-joueurs" class="pb-3 tab-inactive">Joueurs</button>
-        </div>
-    </header>
-
-    <main class="max-w-3xl mx-auto px-4 pt-6">
-
-        <!-- Message d'état / Chargement -->
-        <div id="status-message" class="hidden mb-6 p-3 rounded-lg text-sm bg-blue-900/30 text-blue-300 border border-blue-800 flex items-center gap-2">
-            <span class="loader h-4 w-4"></span>
-            <span id="status-text">Synchronisation avec Google Sheets...</span>
-        </div>
-
-        <!-- Section 1 : Bandeau de Monitoring -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <div class="bg-dark-800 rounded-xl p-4 border border-dark-700">
-                <div class="text-xs font-bold tracking-wider text-slate-400 mb-1">DERNIÈRE RUN</div>
-                <div class="flex items-end gap-3">
-                    <div id="val-date-run" class="text-xl font-bold text-white tracking-wide">--/--/---- • --:--</div>
+    <!-- ÉCRAN DE CONNEXION -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center px-4">
+        <div class="w-full max-w-sm bg-dark-800 rounded-2xl border border-dark-700 p-6 shadow-xl">
+            <div class="flex flex-col items-center text-center mb-6">
+                <div class="h-12 w-12 rounded-xl bg-[#5865F2]/20 border border-[#5865F2]/40 flex items-center justify-center mb-3">
+                    <i class="ph-fill ph-lock-key text-[#5865F2] text-2xl"></i>
                 </div>
-                <div class="text-sm text-slate-400 mt-1"><span id="val-req-session" class="text-blue-400 font-bold">--</span> requêtes générées</div>
+                <h1 class="text-xl font-bold text-white">Playhub Tracker</h1>
+                <p class="text-xs text-slate-400 mt-1">Accès protégé • Saisis le mot de passe administrateur</p>
             </div>
-            <div class="bg-dark-800 rounded-xl p-4 border border-dark-700 relative overflow-hidden">
-                <div class="text-xs font-bold tracking-wider text-slate-400 mb-1">REQUÊTES AUJOURD'HUI</div>
-                <div class="flex items-end gap-2">
-                    <div id="val-req-jour" class="text-3xl font-black text-amber-400">--</div>
-                    <div class="text-sm text-slate-400 font-medium mb-1 mb-1.5">/ 20 000</div>
+
+            <form onsubmit="soumettreConnexion(event)" class="space-y-4">
+                <div>
+                    <input type="password" id="input-password" placeholder="Mot de passe..." required autocomplete="current-password"
+                        class="w-full bg-dark-900 border border-dark-700 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-white placeholder-slate-500">
                 </div>
-            </div>
-        </div>
 
-        <!-- Section 2 : Onglet RÉCAPITULATIF -->
-        <div id="view-recap" class="block">
-            <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                <i class="ph-fill ph-broadcast"></i> Tournois suivis en direct
-            </h2>
-            <div id="liste-recap" class="space-y-4">
-                <!-- Généré par JS -->
-                <div class="text-center py-8 text-slate-500 text-sm italic">Cliquez sur actualiser pour charger les données.</div>
-            </div>
-        </div>
+                <div id="login-error" class="hidden p-2.5 rounded-lg text-xs bg-red-900/30 text-red-300 border border-red-800/70 text-center">
+                    Mot de passe incorrect.
+                </div>
 
-        <!-- Section 3 : Onglet TOURNOIS -->
-        <div id="view-tournois" class="hidden">
-            <div class="bg-dark-800 rounded-xl p-4 border border-dark-700 mb-6">
-                <h3 class="font-bold text-white mb-3">Ajouter un tournoi</h3>
-                <div class="flex gap-2">
-                    <input type="text" id="input-new-tournoi" placeholder="ID (ex: 1254364) ou lien RPH..." class="flex-1 bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white placeholder-slate-500">
-                    <button onclick="ajouterTournoi()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Ajouter</button>
+                <button type="submit" id="btn-login" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2">
+                    <span id="login-btn-text">Déverrouiller</span>
+                    <span id="login-spinner" class="loader h-4 w-4 hidden"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- APPLICATION PRINCIPALE (Masquée tant que non authentifiée) -->
+    <div id="app-container" class="hidden">
+        <!-- En-tête -->
+        <header class="bg-dark-800 border-b border-dark-700 sticky top-0 z-10">
+            <div class="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i class="ph-fill ph-discord-logo text-[#5865F2] text-2xl"></i>
+                    <h1 class="font-bold text-lg text-white">Playhub Tracker</h1>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="chargerDonnees()" id="btn-refresh" title="Actualiser" class="bg-slate-700 hover:bg-slate-600 p-2 rounded-full transition-colors flex items-center justify-center h-10 w-10">
+                        <i class="ph ph-arrows-clockwise text-xl" id="icon-refresh"></i>
+                    </button>
+                    <button onclick="deconnexion()" title="Verrouiller" class="bg-slate-800 hover:bg-red-900/40 text-slate-400 hover:text-red-300 border border-dark-700 p-2 rounded-full transition-colors flex items-center justify-center h-10 w-10">
+                        <i class="ph ph-lock-simple text-lg"></i>
+                    </button>
                 </div>
             </div>
-
-            <h3 class="text-sm font-bold text-slate-400 mb-3 tracking-wider">GESTION DES TOURNOIS</h3>
-            <div class="bg-dark-800 rounded-xl border border-dark-700 divide-y divide-dark-700" id="liste-gestion-tournois">
-                <!-- Généré par JS -->
+            
+            <!-- Navigation Onglets -->
+            <div class="max-w-3xl mx-auto px-4 flex gap-6 text-sm font-medium mt-2">
+                <button onclick="switchTab('recap')" id="tab-recap" class="pb-3 tab-active">Récapitulatif</button>
+                <button onclick="switchTab('tournois')" id="tab-tournois" class="pb-3 tab-inactive">Tournois</button>
+                <button onclick="switchTab('joueurs')" id="tab-joueurs" class="pb-3 tab-inactive">Joueurs</button>
             </div>
-        </div>
+        </header>
 
-        <!-- Section 4 : Onglet JOUEURS -->
-        <div id="view-joueurs" class="hidden">
-            <div class="bg-dark-800 rounded-xl p-4 border border-dark-700 mb-6">
-                <h3 class="font-bold text-white mb-3">Ajouter un joueur</h3>
-                <div class="flex gap-2">
-                    <input type="text" id="input-new-joueur" placeholder="Pseudo PlayHub exact..." class="flex-1 bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white placeholder-slate-500">
-                    <button onclick="ajouterJoueur()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Ajouter</button>
+        <main class="max-w-3xl mx-auto px-4 pt-6">
+
+            <!-- Message d'état / Chargement -->
+            <div id="status-message" class="hidden mb-6 p-3 rounded-lg text-sm bg-blue-900/30 text-blue-300 border border-blue-800 flex items-center gap-2">
+                <span class="loader h-4 w-4"></span>
+                <span id="status-text">Synchronisation avec Google Sheets...</span>
+            </div>
+
+            <!-- Section 1 : Bandeau de Monitoring -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div class="bg-dark-800 rounded-xl p-4 border border-dark-700">
+                    <div class="text-xs font-bold tracking-wider text-slate-400 mb-1">DERNIÈRE RUN</div>
+                    <div class="flex items-end gap-3">
+                        <div id="val-date-run" class="text-xl font-bold text-white tracking-wide">--/--/---- • --:--</div>
+                    </div>
+                    <div class="text-sm text-slate-400 mt-1"><span id="val-req-session" class="text-blue-400 font-bold">--</span> requêtes générées</div>
+                </div>
+                <div class="bg-dark-800 rounded-xl p-4 border border-dark-700 relative overflow-hidden">
+                    <div class="text-xs font-bold tracking-wider text-slate-400 mb-1">REQUÊTES AUJOURD'HUI</div>
+                    <div class="flex items-end gap-2">
+                        <div id="val-req-jour" class="text-3xl font-black text-amber-400">--</div>
+                        <div class="text-sm text-slate-400 font-medium mb-1.5">/ 20 000</div>
+                    </div>
                 </div>
             </div>
 
-            <h3 class="text-sm font-bold text-slate-400 mb-3 tracking-wider">GESTION DES JOUEURS</h3>
-            <div class="bg-dark-800 rounded-xl border border-dark-700 divide-y divide-dark-700" id="liste-gestion-joueurs">
-                <!-- Généré par JS -->
+            <!-- Section 2 : Onglet RÉCAPITULATIF -->
+            <div id="view-recap" class="block">
+                <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <i class="ph-fill ph-broadcast"></i> Tournois suivis en direct
+                </h2>
+                <div id="liste-recap" class="space-y-4">
+                    <div class="text-center py-8 text-slate-500 text-sm italic">Chargement des données...</div>
+                </div>
             </div>
-        </div>
 
-    </main>
+            <!-- Section 3 : Onglet TOURNOIS -->
+            <div id="view-tournois" class="hidden">
+                <div class="bg-dark-800 rounded-xl p-4 border border-dark-700 mb-6">
+                    <h3 class="font-bold text-white mb-3">Ajouter un tournoi</h3>
+                    <div class="flex gap-2">
+                        <input type="text" id="input-new-tournoi" placeholder="ID (ex: 1254364) ou lien RPH..." class="flex-1 bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white placeholder-slate-500">
+                        <button onclick="ajouterTournoi()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Ajouter</button>
+                    </div>
+                </div>
+
+                <h3 class="text-sm font-bold text-slate-400 mb-3 tracking-wider">GESTION DES TOURNOIS</h3>
+                <div class="bg-dark-800 rounded-xl border border-dark-700 divide-y divide-dark-700" id="liste-gestion-tournois"></div>
+            </div>
+
+            <!-- Section 4 : Onglet JOUEURS -->
+            <div id="view-joueurs" class="hidden">
+                <div class="bg-dark-800 rounded-xl p-4 border border-dark-700 mb-6">
+                    <h3 class="font-bold text-white mb-3">Ajouter un joueur</h3>
+                    <div class="flex gap-2">
+                        <input type="text" id="input-new-joueur" placeholder="Pseudo PlayHub exact..." class="flex-1 bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white placeholder-slate-500">
+                        <button onclick="ajouterJoueur()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Ajouter</button>
+                    </div>
+                </div>
+
+                <h3 class="text-sm font-bold text-slate-400 mb-3 tracking-wider">GESTION DES JOUEURS</h3>
+                <div class="bg-dark-800 rounded-xl border border-dark-700 divide-y divide-dark-700" id="liste-gestion-joueurs"></div>
+            </div>
+
+        </main>
+    </div>
 
     <script>
-        // ==========================================
-        // URL MAGIQUE GOOGLE APPS SCRIPT
-        // ==========================================
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxaGtBaAC_V-j8fZ1Nrz80pmcJn7Ru8FBo_5p9VZJtf5nlb39HcWyYMI4DjDwDrFdL5/exec'; 
-        
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxaGtBaAC_V-j8fZ1Nrz80pmcJn7Ru8FBo_5p9VZJtf5nlb39HcWyYMI4DjDwDrFdL5/exec';
+        const STORAGE_KEY = 'playhub_tracker_pwd';
+
+        let motDePasseActuel = localStorage.getItem(STORAGE_KEY) || '';
         let donneesGlobales = { tournois: [], joueurs: [] };
+
+        function afficherEcranConnexion(messageErreur = "") {
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('login-screen').classList.remove('hidden');
+            const errEl = document.getElementById('login-error');
+            if (messageErreur) {
+                errEl.textContent = messageErreur;
+                errEl.classList.remove('hidden');
+            } else {
+                errEl.classList.add('hidden');
+            }
+        }
+
+        function afficherApplication() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+        }
+
+        function deconnexion() {
+            localStorage.removeItem(STORAGE_KEY);
+            motDePasseActuel = '';
+            donneesGlobales = { tournois: [], joueurs: [] };
+            document.getElementById('input-password').value = '';
+            afficherEcranConnexion();
+        }
+
+        async function soumettreConnexion(event) {
+            event.preventDefault();
+            const pwdSaisi = document.getElementById('input-password').value;
+            if (!pwdSaisi) return;
+
+            const btn = document.getElementById('btn-login');
+            const btnText = document.getElementById('login-btn-text');
+            const spinner = document.getElementById('login-spinner');
+
+            btn.disabled = true;
+            btnText.textContent = "Vérification...";
+            spinner.classList.remove('hidden');
+            document.getElementById('login-error').classList.add('hidden');
+
+            await chargerDonnees(pwdSaisi, true);
+
+            btn.disabled = false;
+            btnText.textContent = "Déverrouiller";
+            spinner.classList.add('hidden');
+        }
 
         function switchTab(tabName) {
             ['recap', 'tournois', 'joueurs'].forEach(t => {
@@ -178,20 +253,40 @@
         }
 
         // --- LECTURE ---
-        async function chargerDonnees() {
-            if (SCRIPT_URL === 'URL_DE_TON_DEPLOIEMENT_GOOGLE_ICI') {
-                alert("Attention: L'URL de Google Apps Script n'a pas été insérée dans le code de la page.");
+        async function chargerDonnees(pwdTest = null, depuisLogin = false) {
+            const pwdAUtiliser = pwdTest !== null ? pwdTest : motDePasseActuel;
+            if (!pwdAUtiliser) {
+                afficherEcranConnexion();
                 return;
             }
 
-            toggleLoader(true, "Synchronisation avec Google Sheets...");
+            if (!depuisLogin) {
+                toggleLoader(true, "Synchronisation avec Google Sheets...");
+            }
+
             try {
-                const response = await fetch(SCRIPT_URL);
+                const url = `${SCRIPT_URL}?pwd=${encodeURIComponent(pwdAUtiliser)}`;
+                const response = await fetch(url);
                 const data = await response.json();
-                
+
+                if (data.error === "unauthorized") {
+                    localStorage.removeItem(STORAGE_KEY);
+                    motDePasseActuel = '';
+                    afficherEcranConnexion(depuisLogin ? "Mot de passe incorrect." : "Session expirée, reconnecte-toi.");
+                    return;
+                }
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                // Authentification réussie : mémorisation et affichage
+                motDePasseActuel = pwdAUtiliser;
+                localStorage.setItem(STORAGE_KEY, pwdAUtiliser);
+                afficherApplication();
+
                 donneesGlobales = data;
-                
-                // Maj Compteurs
+
                 document.getElementById('val-date-run').textContent = data.compteurs.date || "Aucune run";
                 document.getElementById('val-req-session').textContent = data.compteurs.reqSession || "0";
                 document.getElementById('val-req-jour').textContent = data.compteurs.reqJour || "0";
@@ -201,29 +296,32 @@
                 renderGestionJoueurs();
 
             } catch (error) {
-                alert("Erreur de connexion à Google Sheets.");
+                if (depuisLogin) {
+                    afficherEcranConnexion("Impossible de joindre Google Sheets.");
+                } else {
+                    alert("Erreur de connexion à Google Sheets.");
+                }
                 console.error(error);
             } finally {
                 toggleLoader(false);
             }
         }
 
-        // --- ECRITURE ---
+        // --- ÉCRITURE ---
         async function posterAction(action, payloadDonnees) {
             toggleLoader(true, "Enregistrement en cours...");
             try {
-                const payload = { action: action, ...payloadDonnees };
+                const payload = { action: action, pwd: motDePasseActuel, ...payloadDonnees };
                 
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors', // Obligatoire avec Apps Script pour éviter l'erreur CORS
+                    mode: 'no-cors',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify(payload)
                 });
                 
-                // Recharge complet après modif (vu que c'est du no-cors, on ne lit pas la réponse, on recharge direct)
                 setTimeout(() => chargerDonnees(), 1500);
 
             } catch (error) {
@@ -240,9 +338,8 @@
         function ajouterTournoi() {
             const input = document.getElementById('input-new-tournoi');
             let val = input.value.trim();
-            if(!val) return;
+            if (!val) return;
             
-            // Extraction intelligente si c'est un lien complet
             const matchUrl = val.match(/events\/([^\/\?\s#]+)/i);
             if (matchUrl && matchUrl[1]) {
                 val = matchUrl[1].trim();
@@ -255,7 +352,7 @@
         function ajouterJoueur() {
             const input = document.getElementById('input-new-joueur');
             const val = input.value.trim();
-            if(!val) return;
+            if (!val) return;
             input.value = "";
             posterAction('addJoueur', { pseudo: val });
         }
@@ -273,7 +370,6 @@
             }
 
             tournoisActifs.forEach(t => {
-                // Trouver les joueurs inscrits à ce tournoi (et qui sont actifs)
                 const joueursDuTournoi = donneesGlobales.joueurs.filter(j => 
                     j.actif && j.tournois.includes(t.id)
                 );
@@ -326,7 +422,7 @@
             donneesGlobales.tournois.forEach(t => {
                 container.innerHTML += createToggleRow(t.nom, `ID: ${t.id}`, t.actif, t.ligne, 'tournoi');
             });
-            if(donneesGlobales.tournois.length === 0) {
+            if (donneesGlobales.tournois.length === 0) {
                 container.innerHTML = '<div class="p-4 text-center text-sm text-slate-500 italic">Aucun tournoi enregistré.</div>';
             }
         }
@@ -337,16 +433,15 @@
             donneesGlobales.joueurs.forEach(j => {
                 container.innerHTML += createToggleRow(j.pseudo, null, j.actif, j.ligne, 'joueur');
             });
-            if(donneesGlobales.joueurs.length === 0) {
+            if (donneesGlobales.joueurs.length === 0) {
                 container.innerHTML = '<div class="p-4 text-center text-sm text-slate-500 italic">Aucun joueur enregistré.</div>';
             }
         }
 
-        // Lancement au chargement (si l'URL est configurée)
-        if (SCRIPT_URL !== 'URL_DE_TON_DEPLOIEMENT_GOOGLE_ICI') {
-            chargerDonnees();
+        // Vérification automatique au démarrage si un mot de passe est déjà enregistré sur l'appareil
+        if (motDePasseActuel) {
+            chargerDonnees(motDePasseActuel, true);
         }
-
     </script>
 </body>
 </html>
