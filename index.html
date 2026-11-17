@@ -122,8 +122,8 @@
         <!-- En-tête -->
         <header class="bg-[#0F1629]/95 backdrop-blur-md border-b border-dark-700 sticky top-0 z-20">
             <div class="h-1 w-full lorcana-bar"></div>
-            <div class="max-w-3xl mx-auto px-4 pt-3.5 pb-2.5 flex justify-between items-center gap-2">
-                <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div class="max-w-3xl mx-auto px-4 pt-3.5 pb-2.5 flex flex-wrap sm:flex-nowrap justify-between items-center gap-2">
+                <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 sm:flex-initial order-1">
                     <div class="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center flex-shrink-0">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="w-full h-full drop-shadow-md">
                             <rect x="10" y="4" width="44" height="56" rx="8" fill="#131B2E" stroke="#FBBF24" stroke-width="4"/>
@@ -135,22 +135,28 @@
                             <circle cx="23.3" cy="27" r="4.5" fill="#CBD5E1"/>
                         </svg>
                     </div>
-                    <div class="truncate">
-                        <h1 class="font-bold text-base sm:text-lg leading-tight text-white truncate">Playhub Tracker</h1>
-                        <div class="text-[11px] text-slate-400 truncate">Suivi Lorcana en direct</div>
+                    <div class="min-w-0">
+                        <h1 class="font-bold text-base sm:text-lg leading-tight text-white sm:truncate">Playhub Tracker</h1>
+                        <div class="text-[11px] text-slate-400 sm:truncate">Suivi Lorcana en direct</div>
                     </div>
                 </div>
-                <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-                    <!-- Toggle Minuteur Auto (Tournois!I4) -->
-                    <label id="minuteur-pill" title="Activer ou arrêter le minuteur automatique (Tournois!I4)" class="flex items-center gap-2 px-2.5 sm:px-3 h-9 sm:h-10 rounded-xl bg-slate-800 border border-dark-700 cursor-pointer select-none transition-colors">
-                        <span id="minuteur-dot" class="w-2 h-2 rounded-full bg-slate-500 transition-colors"></span>
-                        <span id="minuteur-label" class="text-xs font-semibold text-slate-400 transition-colors">Auto</span>
-                        <div class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in">
-                            <input type="checkbox" id="toggle-minuteur" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-600 transition-all duration-300" onchange="toggleMinuteur(this)"/>
-                            <label for="toggle-minuteur" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-700 cursor-pointer transition-colors duration-300"></label>
-                        </div>
-                    </label>
 
+                <!-- Toggle Minuteur Auto (Tournois!I4) -->
+                <label id="minuteur-pill" title="Activer ou arrêter le minuteur automatique (Tournois!I4)" class="order-3 sm:order-2 sm:ml-auto w-full sm:w-auto justify-between sm:justify-start mt-1 sm:mt-0 flex items-center gap-2 px-3 h-9 sm:h-10 rounded-xl bg-slate-800 border border-dark-700 cursor-pointer select-none transition-colors">
+                    <span class="flex items-center gap-2">
+                        <span id="minuteur-dot" class="w-2 h-2 rounded-full bg-slate-500 transition-colors"></span>
+                        <span id="minuteur-label" class="text-xs font-semibold text-slate-400 transition-colors">
+                            <span class="sm:hidden">Suivi automatique</span>
+                            <span class="hidden sm:inline">Auto</span>
+                        </span>
+                    </span>
+                    <div class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" id="toggle-minuteur" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-600 transition-all duration-300" onchange="toggleMinuteur(this)"/>
+                        <label for="toggle-minuteur" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-700 cursor-pointer transition-colors duration-300"></label>
+                    </div>
+                </label>
+
+                <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 order-2 sm:order-3">
                     <button onclick="chargerDonnees()" id="btn-refresh" title="Actualiser (auto toutes les 30s)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-dark-700 p-2 rounded-xl transition-colors flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10">
                         <i class="ph ph-arrows-clockwise text-lg sm:text-xl" id="icon-refresh"></i>
                     </button>
@@ -161,16 +167,16 @@
             </div>
             
             <!-- Navigation Onglets -->
-            <div class="max-w-3xl mx-auto px-4 pb-3 pt-1 flex gap-2 text-xs sm:text-sm font-medium">
-                <button onclick="switchTab('recap')" id="tab-recap" class="px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 tab-active">
+            <div class="max-w-3xl mx-auto px-4 pb-3 pt-1 flex justify-between sm:justify-start gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium">
+                <button onclick="switchTab('recap')" id="tab-recap" class="flex-1 sm:flex-initial justify-center sm:justify-start px-3 sm:px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 tab-active">
                     <i class="ph-fill ph-broadcast text-base text-emerald-400"></i>
                     <span>Récapitulatif</span>
                 </button>
-                <button onclick="switchTab('tournois')" id="tab-tournois" class="px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 tab-inactive">
+                <button onclick="switchTab('tournois')" id="tab-tournois" class="flex-1 sm:flex-initial justify-center sm:justify-start px-3 sm:px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 tab-inactive">
                     <i class="ph-fill ph-trophy text-base text-amber-400"></i>
                     <span>Tournois</span>
                 </button>
-                <button onclick="switchTab('joueurs')" id="tab-joueurs" class="px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 tab-inactive">
+                <button onclick="switchTab('joueurs')" id="tab-joueurs" class="flex-1 sm:flex-initial justify-center sm:justify-start px-3 sm:px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 tab-inactive">
                     <i class="ph-fill ph-users-three text-base text-sky-400"></i>
                     <span>Joueurs</span>
                 </button>
@@ -365,11 +371,11 @@
 
             cb.checked = Boolean(actif);
             if (actif) {
-                pill.className = "flex items-center gap-2 px-2.5 sm:px-3 h-9 sm:h-10 rounded-xl bg-emerald-950/35 border border-emerald-500/40 cursor-pointer select-none transition-colors";
+                pill.className = "order-3 sm:order-2 sm:ml-auto w-full sm:w-auto justify-between sm:justify-start mt-1 sm:mt-0 flex items-center gap-2 px-3 h-9 sm:h-10 rounded-xl bg-emerald-950/35 border border-emerald-500/40 cursor-pointer select-none transition-colors";
                 dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse transition-colors";
                 label.className = "text-xs font-semibold text-emerald-300 transition-colors";
             } else {
-                pill.className = "flex items-center gap-2 px-2.5 sm:px-3 h-9 sm:h-10 rounded-xl bg-slate-800 border border-dark-700 cursor-pointer select-none transition-colors";
+                pill.className = "order-3 sm:order-2 sm:ml-auto w-full sm:w-auto justify-between sm:justify-start mt-1 sm:mt-0 flex items-center gap-2 px-3 h-9 sm:h-10 rounded-xl bg-slate-800 border border-dark-700 cursor-pointer select-none transition-colors";
                 dot.className = "w-2 h-2 rounded-full bg-slate-500 transition-colors";
                 label.className = "text-xs font-semibold text-slate-400 transition-colors";
             }
@@ -607,11 +613,11 @@
             ['recap', 'tournois', 'joueurs'].forEach(t => {
                 document.getElementById('view-' + t).classList.add('hidden');
                 document.getElementById('view-' + t).classList.remove('block');
-                document.getElementById('tab-' + t).className = "px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 tab-inactive";
+                document.getElementById('tab-' + t).className = "flex-1 sm:flex-initial justify-center sm:justify-start px-3 sm:px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 tab-inactive";
             });
             document.getElementById('view-' + tabName).classList.add('block');
             document.getElementById('view-' + tabName).classList.remove('hidden');
-            document.getElementById('tab-' + tabName).className = "px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 tab-active";
+            document.getElementById('tab-' + tabName).className = "flex-1 sm:flex-initial justify-center sm:justify-start px-3 sm:px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 tab-active";
         }
 
         function toggleLoader(show, text = "") {
@@ -911,19 +917,22 @@
                     : `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider bg-slate-800 text-slate-300 border border-slate-700 flex-shrink-0">${t.statut || 'EN ATTENTE'}</span>`;
 
                 const titreRondeHtml = t.rondeEnCours
-                    ? `<span class="font-normal text-slate-300 text-xs sm:text-sm whitespace-nowrap flex-shrink-0">- ${t.rondeEnCours}</span>`
+                    ? `<span class="font-normal text-slate-300 text-xs sm:text-sm whitespace-nowrap flex-shrink-0"><span class="hidden sm:inline">- </span>${t.rondeEnCours}</span>`
                     : '';
 
                 let htmlCard = `
                     <div class="bg-dark-800 rounded-2xl border ${cardBorderClass} overflow-hidden">
-                        <div class="px-4 py-3.5 bg-[#182238] border-b border-dark-700 flex justify-between items-center gap-3">
-                            <div class="min-w-0 flex items-center gap-1.5">
-                                <a href="https://tcg.ravensburgerplay.com/events/${t.id}" target="_blank" rel="noopener" class="font-bold text-white text-sm sm:text-base hover:text-indigo-300 hover:underline truncate transition-colors">
+                        <div class="px-4 py-3 sm:py-3.5 bg-[#182238] border-b border-dark-700 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3">
+                            <div class="min-w-0 flex flex-col sm:flex-row sm:items-center gap-1.5">
+                                <a href="https://tcg.ravensburgerplay.com/events/${t.id}" target="_blank" rel="noopener" class="font-bold text-white text-sm sm:text-base leading-snug hover:text-indigo-300 hover:underline sm:truncate transition-colors">
                                     ${t.nom}
                                 </a>
-                                ${titreRondeHtml}
+                                <div class="flex items-center justify-between sm:contents gap-2">
+                                    ${titreRondeHtml}
+                                    <div class="sm:hidden ml-auto">${badgeStatut}</div>
+                                </div>
                             </div>
-                            ${badgeStatut}
+                            <div class="hidden sm:block flex-shrink-0">${badgeStatut}</div>
                         </div>
                         <div class="bg-dark-900/50">
                 `;
