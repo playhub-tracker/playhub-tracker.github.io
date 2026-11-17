@@ -116,6 +116,12 @@
             <span id="status-text">Synchronisation avec Google Sheets...</span>
         </div>
 
+        <!-- Bulle flottante d'alerte (doublon, etc.) -->
+        <div id="toast-alert" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-max max-w-[90vw] px-4 py-2.5 rounded-full text-xs sm:text-sm font-medium bg-amber-950/95 backdrop-blur-md text-amber-200 border border-amber-500/50 shadow-2xl shadow-black/60 flex items-center gap-2 pointer-events-none opacity-0 translate-y-3 transition-all duration-200">
+            <i class="ph-fill ph-warning-circle text-amber-400 text-base flex-shrink-0"></i>
+            <span id="toast-alert-text">Joueur déjà suivi</span>
+        </div>
+
         <main class="max-w-3xl mx-auto px-4 pt-6">
 
             <!-- Section 1 : Bandeau de Monitoring -->
@@ -195,9 +201,26 @@
         let autoRefreshTimer = null;
         let syncEnCours = false;
         let requetesEcritureEnCours = 0;
+        let toastAlertTimer = null;
 
         let suggestionIndex = -1;
         let suggestionsActuelles = [];
+
+        function afficherToastAlerte(message) {
+            const el = document.getElementById('toast-alert');
+            const txtEl = document.getElementById('toast-alert-text');
+            if (!el || !txtEl) return;
+
+            txtEl.textContent = message;
+            el.classList.remove('opacity-0', 'translate-y-3');
+            el.classList.add('opacity-100', 'translate-y-0');
+
+            if (toastAlertTimer) clearTimeout(toastAlertTimer);
+            toastAlertTimer = setTimeout(() => {
+                el.classList.remove('opacity-100', 'translate-y-0');
+                el.classList.add('opacity-0', 'translate-y-3');
+            }, 2500);
+        }
 
         function normaliserTexteRecherche(str) {
             return String(str || "")
@@ -220,7 +243,7 @@
             const input = document.getElementById('input-new-joueur');
             input.value = pseudo;
             fermerSuggestionsJoueur();
-            input.focus();
+            ajouterJoueur();
         }
 
         function majSuggestionsJoueur() {
@@ -263,11 +286,11 @@
             if (!box || suggestionsActuelles.length === 0) return;
 
             const pseudosDejaSuivis = new Set(
-                (donneesGlobales.joueurs || []).map(j => String(j.pseudo || "").trim().toLowerCase())
+                (donneesGlobales.joueurs || []).map(j => String(j.pseudo || "").trim())
             );
 
             box.innerHTML = suggestionsActuelles.map((pseudo, idx) => {
-                const dejaAjoute = pseudosDejaSuivis.has(pseudo.toLowerCase());
+                const dejaAjoute = pseudosDejaSuivis.has(String(pseudo).trim());
                 const estSelectionne = idx === suggestionIndex;
                 const pseudoEchappe = pseudo.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
 
@@ -280,7 +303,7 @@
                             <span class="truncate">${pseudo}</span>
                         </span>
                         <span class="text-[11px] px-2 py-0.5 rounded-full flex-shrink-0 ${dejaAjoute ? 'bg-slate-700 text-slate-400' : 'bg-[#5865F2]/20 text-indigo-300 border border-[#5865F2]/30'}">
-                            ${dejaAjoute ? 'Déjà dans la liste' : 'Team'}
+                            ${dejaAjoute ? 'Déjà suivi' : 'Team'}
                         </span>
                     </button>
                 `;
@@ -609,8 +632,19 @@
             const input = document.getElementById('input-new-joueur');
             const val = input.value.trim();
             if (!val) return;
-            input.value = "";
             fermerSuggestionsJoueur();
+
+            // Sécurité anti-doublon stricte
+            const dejaSuivi = (donneesGlobales.joueurs || []).some(
+                j => String(j.pseudo || "").trim() === val
+            );
+            if (dejaSuivi) {
+                input.value = "";
+                afficherToastAlerte("Joueur déjà suivi");
+                return;
+            }
+
+            input.value = "";
 
             // Affichage immédiat dans l'interface
             donneesGlobales.joueurs.push({
