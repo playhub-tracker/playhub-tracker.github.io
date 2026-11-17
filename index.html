@@ -321,6 +321,9 @@
                 const dejaAjoute = pseudosDejaSuivis.has(String(pseudo).trim());
                 const estSelectionne = idx === suggestionIndex;
                 const pseudoEchappe = pseudo.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+                const badgeDejaSuivi = dejaAjoute
+                    ? `<span class="text-[11px] px-2 py-0.5 rounded-full flex-shrink-0 bg-slate-700 text-slate-400">Déjà suivi</span>`
+                    : '';
 
                 return `
                     <button type="button"
@@ -330,9 +333,7 @@
                             <i class="ph-fill ph-users-three text-[#5865F2] flex-shrink-0"></i>
                             <span class="truncate">${pseudo}</span>
                         </span>
-                        <span class="text-[11px] px-2 py-0.5 rounded-full flex-shrink-0 ${dejaAjoute ? 'bg-slate-700 text-slate-400' : 'bg-[#5865F2]/20 text-indigo-300 border border-[#5865F2]/30'}">
-                            ${dejaAjoute ? 'Déjà suivi' : 'Team'}
-                        </span>
+                        ${badgeDejaSuivi}
                     </button>
                 `;
             }).join('');
