@@ -145,9 +145,9 @@
 
     <script>
         // ==========================================
-        // URL MAGIQUE GOOGLE APPS SCRIPT (À REMPLACER)
+        // URL MAGIQUE GOOGLE APPS SCRIPT
         // ==========================================
-        const SCRIPT_URL = 'URL_DE_TON_DEPLOIEMENT_GOOGLE_ICI'; 
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxaGtBaAC_V-j8fZ1Nrz80pmcJn7Ru8FBo_5p9VZJtf5nlb39HcWyYMI4DjDwDrFdL5/exec'; 
         
         let donneesGlobales = { tournois: [], joueurs: [] };
 
@@ -343,7 +343,7 @@
         }
 
         // Lancement au chargement (si l'URL est configurée)
-        if (SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbxaGtBaAC_V-j8fZ1Nrz80pmcJn7Ru8FBo_5p9VZJtf5nlb39HcWyYMI4DjDwDrFdL5/exec') {
+        if (SCRIPT_URL !== 'URL_DE_TON_DEPLOIEMENT_GOOGLE_ICI') {
             chargerDonnees();
         }
 
