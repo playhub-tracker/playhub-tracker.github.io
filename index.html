@@ -16,9 +16,10 @@
                 extend: {
                     colors: {
                         dark: {
-                            900: '#0F172A',
-                            800: '#1E293B',
-                            700: '#334155'
+                            950: '#080C16',
+                            900: '#0B101E',
+                            800: '#131B2E',
+                            700: '#243049'
                         }
                     }
                 }
@@ -27,10 +28,32 @@
     </script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        .tab-active { border-bottom: 2px solid #3b82f6; color: #60a5fa; }
-        .tab-inactive { color: #94a3b8; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0B101E;
+        }
+
+        /* Liseré aux 6 couleurs d'encre Lorcana */
+        .lorcana-bar {
+            background: linear-gradient(90deg, #FBBF24 0%, #EF4444 20%, #A855F7 40%, #3B82F6 60%, #22C55E 80%, #94A3B8 100%);
+        }
+
+        /* Onglets style pilules sobres */
+        .tab-active {
+            background-color: rgba(88, 101, 242, 0.22);
+            color: #ffffff;
+            border: 1px solid rgba(129, 140, 248, 0.4);
+        }
+        .tab-inactive {
+            color: #94a3b8;
+            border: 1px solid transparent;
+        }
+        .tab-inactive:hover {
+            color: #e2e8f0;
+            background-color: rgba(30, 41, 59, 0.6);
+        }
         
+        /* Toggle Switch Custom */
         .toggle-checkbox:checked {
             right: 0;
             border-color: #10b981;
@@ -39,8 +62,8 @@
             background-color: #10b981;
         }
         .loader {
-            border: 3px solid #334155;
-            border-bottom-color: #3b82f6;
+            border: 3px solid rgba(148, 163, 184, 0.25);
+            border-bottom-color: #60a5fa;
             border-radius: 50%;
             display: inline-block;
             box-sizing: border-box;
@@ -52,72 +75,90 @@
         }
     </style>
 </head>
-<body class="bg-dark-900 text-slate-200 min-h-screen pb-10">
+<body class="bg-dark-900 text-slate-200 min-h-screen pb-12">
 
     <!-- ÉCRAN DE CONNEXION -->
     <div id="login-screen" class="min-h-screen flex items-center justify-center px-4">
-        <div class="w-full max-w-sm bg-dark-800 rounded-2xl border border-dark-700 p-6 shadow-xl">
-            <div class="flex flex-col items-center text-center mb-6">
-                <div class="h-12 w-12 rounded-xl bg-[#5865F2]/20 border border-[#5865F2]/40 flex items-center justify-center mb-3">
-                    <i class="ph-fill ph-lock-key text-[#5865F2] text-2xl"></i>
+        <div class="w-full max-w-sm bg-dark-800 rounded-2xl border border-dark-700 overflow-hidden shadow-2xl shadow-black/50">
+            <div class="h-1 w-full lorcana-bar"></div>
+            <div class="p-6">
+                <div class="flex flex-col items-center text-center mb-6">
+                    <div class="h-12 w-12 rounded-xl bg-[#5865F2] flex items-center justify-center mb-3.5 shadow-md shadow-[#5865F2]/25">
+                        <i class="ph-fill ph-lock-key text-white text-2xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-white">Playhub Tracker</h1>
+                    <p class="text-xs text-slate-400 mt-1">Accès protégé • Saisis le mot de passe administrateur</p>
                 </div>
-                <h1 class="text-xl font-bold text-white">Playhub Tracker</h1>
-                <p class="text-xs text-slate-400 mt-1">Accès protégé • Saisis le mot de passe administrateur</p>
+
+                <form onsubmit="soumettreConnexion(event)" class="space-y-4">
+                    <div>
+                        <input type="password" id="input-password" placeholder="Mot de passe..." required autocomplete="current-password"
+                            class="w-full bg-dark-950 border border-dark-700 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:border-indigo-400 text-white placeholder-slate-500 transition-colors">
+                    </div>
+
+                    <div id="login-error" class="hidden p-2.5 rounded-xl text-xs bg-red-950/60 text-red-300 border border-red-800/70 text-center">
+                        Mot de passe incorrect.
+                    </div>
+
+                    <button type="submit" id="btn-login" class="w-full bg-[#5865F2] hover:bg-[#4752C4] text-white py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2">
+                        <span id="login-btn-text">Déverrouiller</span>
+                        <span id="login-spinner" class="loader h-4 w-4 hidden"></span>
+                    </button>
+                </form>
             </div>
-
-            <form onsubmit="soumettreConnexion(event)" class="space-y-4">
-                <div>
-                    <input type="password" id="input-password" placeholder="Mot de passe..." required autocomplete="current-password"
-                        class="w-full bg-dark-900 border border-dark-700 rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-blue-500 text-white placeholder-slate-500">
-                </div>
-
-                <div id="login-error" class="hidden p-2.5 rounded-lg text-xs bg-red-900/30 text-red-300 border border-red-800/70 text-center">
-                    Mot de passe incorrect.
-                </div>
-
-                <button type="submit" id="btn-login" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2">
-                    <span id="login-btn-text">Déverrouiller</span>
-                    <span id="login-spinner" class="loader h-4 w-4 hidden"></span>
-                </button>
-            </form>
         </div>
     </div>
 
     <!-- APPLICATION PRINCIPALE -->
     <div id="app-container" class="hidden">
         <!-- En-tête -->
-        <header class="bg-dark-800 border-b border-dark-700 sticky top-0 z-10">
-            <div class="max-w-3xl mx-auto px-4 py-4 flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <i class="ph-fill ph-discord-logo text-[#5865F2] text-2xl"></i>
-                    <h1 class="font-bold text-lg text-white">Playhub Tracker</h1>
+        <header class="bg-[#0F1629]/95 backdrop-blur-md border-b border-dark-700 sticky top-0 z-20">
+            <div class="h-1 w-full lorcana-bar"></div>
+            <div class="max-w-3xl mx-auto px-4 pt-3.5 pb-2.5 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="h-9 w-9 rounded-xl bg-[#5865F2] flex items-center justify-center shadow-sm">
+                        <i class="ph-fill ph-discord-logo text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight text-white">Playhub Tracker</h1>
+                        <div class="text-[11px] text-slate-400">Suivi Lorcana en direct</div>
+                    </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="chargerDonnees()" id="btn-refresh" title="Actualiser (auto toutes les 30s)" class="bg-slate-700 hover:bg-slate-600 p-2 rounded-full transition-colors flex items-center justify-center h-10 w-10">
+                    <button onclick="chargerDonnees()" id="btn-refresh" title="Actualiser (auto toutes les 30s)" class="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-dark-700 p-2 rounded-xl transition-colors flex items-center justify-center h-10 w-10">
                         <i class="ph ph-arrows-clockwise text-xl" id="icon-refresh"></i>
                     </button>
-                    <button onclick="deconnexion()" title="Verrouiller" class="bg-slate-800 hover:bg-red-900/40 text-slate-400 hover:text-red-300 border border-dark-700 p-2 rounded-full transition-colors flex items-center justify-center h-10 w-10">
+                    <button onclick="deconnexion()" title="Verrouiller" class="bg-slate-800 hover:bg-red-950/50 text-slate-400 hover:text-red-300 border border-dark-700 hover:border-red-800/60 p-2 rounded-xl transition-colors flex items-center justify-center h-10 w-10">
                         <i class="ph ph-lock-simple text-lg"></i>
                     </button>
                 </div>
             </div>
             
             <!-- Navigation Onglets -->
-            <div class="max-w-3xl mx-auto px-4 flex gap-6 text-sm font-medium mt-2">
-                <button onclick="switchTab('recap')" id="tab-recap" class="pb-3 tab-active">Récapitulatif</button>
-                <button onclick="switchTab('tournois')" id="tab-tournois" class="pb-3 tab-inactive">Tournois</button>
-                <button onclick="switchTab('joueurs')" id="tab-joueurs" class="pb-3 tab-inactive">Joueurs</button>
+            <div class="max-w-3xl mx-auto px-4 pb-3 pt-1 flex gap-2 text-xs sm:text-sm font-medium">
+                <button onclick="switchTab('recap')" id="tab-recap" class="px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 tab-active">
+                    <i class="ph-fill ph-broadcast text-base text-emerald-400"></i>
+                    <span>Récapitulatif</span>
+                </button>
+                <button onclick="switchTab('tournois')" id="tab-tournois" class="px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 tab-inactive">
+                    <i class="ph-fill ph-trophy text-base text-amber-400"></i>
+                    <span>Tournois</span>
+                </button>
+                <button onclick="switchTab('joueurs')" id="tab-joueurs" class="px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 tab-inactive">
+                    <i class="ph-fill ph-users-three text-base text-sky-400"></i>
+                    <span>Joueurs</span>
+                </button>
             </div>
         </header>
 
-        <!-- Bulle flottante d'état / Chargement (sans décalage de mise en page) -->
-        <div id="status-message" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-max max-w-[90vw] px-4 py-2.5 rounded-full text-xs sm:text-sm font-medium bg-slate-800/95 backdrop-blur-md text-blue-200 border border-blue-500/40 shadow-2xl shadow-black/60 flex items-center gap-2.5 pointer-events-none opacity-0 translate-y-3 transition-all duration-200">
+        <!-- Bulle flottante d'état / Chargement -->
+        <div id="status-message" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-max max-w-[90vw] px-4 py-2.5 rounded-full text-xs sm:text-sm font-medium bg-dark-800/95 backdrop-blur-md text-slate-200 border border-indigo-400/35 shadow-2xl shadow-black/70 flex items-center gap-2.5 pointer-events-none opacity-0 translate-y-3 transition-all duration-200">
             <span class="loader h-4 w-4 flex-shrink-0"></span>
             <span id="status-text">Synchronisation avec Google Sheets...</span>
         </div>
 
         <!-- Bulle flottante d'alerte (doublon, etc.) -->
-        <div id="toast-alert" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-max max-w-[90vw] px-4 py-2.5 rounded-full text-xs sm:text-sm font-medium bg-amber-950/95 backdrop-blur-md text-amber-200 border border-amber-500/50 shadow-2xl shadow-black/60 flex items-center gap-2 pointer-events-none opacity-0 translate-y-3 transition-all duration-200">
+        <div id="toast-alert" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-max max-w-[90vw] px-4 py-2.5 rounded-full text-xs sm:text-sm font-medium bg-amber-950/95 backdrop-blur-md text-amber-200 border border-amber-500/50 shadow-2xl shadow-black/70 flex items-center gap-2 pointer-events-none opacity-0 translate-y-3 transition-all duration-200">
             <i class="ph-fill ph-warning-circle text-amber-400 text-base flex-shrink-0"></i>
             <span id="toast-alert-text">Joueur déjà suivi</span>
         </div>
@@ -126,27 +167,51 @@
 
             <!-- Section 1 : Bandeau de Monitoring -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                <div class="bg-dark-800 rounded-xl p-4 border border-dark-700">
-                    <div class="text-xs font-bold tracking-wider text-slate-400 mb-1">DERNIÈRE RUN</div>
-                    <div class="flex items-end gap-3">
-                        <div id="val-date-run" class="text-xl font-bold text-white tracking-wide">--/--/---- • --:--</div>
+                <!-- Carte Dernière Run -->
+                <div class="bg-dark-800 rounded-2xl p-4 border border-dark-700">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Dernière run</span>
+                        <span class="h-7 w-7 rounded-lg bg-indigo-500/15 border border-indigo-400/25 flex items-center justify-center text-indigo-400">
+                            <i class="ph-fill ph-clock-countdown text-base"></i>
+                        </span>
                     </div>
-                    <div class="text-sm text-slate-400 mt-1"><span id="val-req-session" class="text-blue-400 font-bold">--</span> requêtes générées</div>
+                    <div id="val-date-run" class="text-xl font-bold text-white tracking-wide">--/--/---- • --:--</div>
+                    <div class="mt-2 flex items-center gap-1.5 text-xs text-slate-400">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-500/15 border border-indigo-400/25 text-indigo-300 font-semibold">
+                            <span id="val-req-session">--</span>
+                        </span>
+                        <span>requêtes générées</span>
+                    </div>
                 </div>
-                <div class="bg-dark-800 rounded-xl p-4 border border-dark-700 relative overflow-hidden">
-                    <div class="text-xs font-bold tracking-wider text-slate-400 mb-1">REQUÊTES AUJOURD'HUI</div>
-                    <div class="flex items-end gap-2">
-                        <div id="val-req-jour" class="text-3xl font-black text-amber-400">--</div>
-                        <div class="text-sm text-slate-400 font-medium mb-1.5">/ 20 000</div>
+
+                <!-- Carte Requêtes Aujourd'hui -->
+                <div class="bg-dark-800 rounded-2xl p-4 border border-dark-700">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-[11px] font-bold tracking-wider text-slate-400 uppercase">Requêtes aujourd'hui</span>
+                        <span class="h-7 w-7 rounded-lg bg-amber-500/15 border border-amber-400/25 flex items-center justify-center text-amber-400">
+                            <i class="ph-fill ph-gauge text-base"></i>
+                        </span>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <div id="val-req-jour" class="text-3xl font-extrabold text-amber-400">--</div>
+                        <div class="text-xs text-slate-400 font-medium">/ 20 000</div>
+                    </div>
+                    <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden mt-2.5 border border-white/5">
+                        <div id="bar-req-jour" class="h-full rounded-full bg-amber-400 transition-all duration-500" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
 
             <!-- Section 2 : Onglet RÉCAPITULATIF -->
             <div id="view-recap" class="block">
-                <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
-                    <i class="ph-fill ph-broadcast"></i> Tournois suivis en direct
-                </h2>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2.5">
+                        <span class="h-7 w-7 rounded-lg bg-emerald-500/15 border border-emerald-400/25 flex items-center justify-center text-emerald-400">
+                            <i class="ph-fill ph-broadcast"></i>
+                        </span>
+                        <span>Tournois suivis en direct</span>
+                    </h2>
+                </div>
                 <div id="liste-recap" class="space-y-4">
                     <div class="text-center py-8 text-slate-500 text-sm italic">Chargement des données...</div>
                 </div>
@@ -154,38 +219,50 @@
 
             <!-- Section 3 : Onglet TOURNOIS -->
             <div id="view-tournois" class="hidden">
-                <div class="bg-dark-800 rounded-xl p-4 border border-dark-700 mb-6">
-                    <h3 class="font-bold text-white mb-3">Ajouter un tournoi</h3>
+                <div class="bg-dark-800 rounded-2xl p-4 border border-dark-700 mb-6">
+                    <h3 class="font-bold text-white mb-3 flex items-center gap-2 text-sm">
+                        <i class="ph-fill ph-plus-circle text-indigo-400 text-base"></i>
+                        <span>Ajouter un tournoi</span>
+                    </h3>
                     <form onsubmit="ajouterTournoi(event)" class="flex gap-2">
-                        <input type="text" id="input-new-tournoi" placeholder="ID (ex: 1254364) ou lien RPH..." class="flex-1 bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white placeholder-slate-500">
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Ajouter</button>
+                        <input type="text" id="input-new-tournoi" placeholder="ID (ex: 1254364) ou lien RPH..." class="flex-1 bg-dark-950 border border-dark-700 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-400 text-white placeholder-slate-500 transition-colors">
+                        <button type="submit" class="bg-[#5865F2] hover:bg-[#4752C4] text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">Ajouter</button>
                     </form>
                 </div>
 
-                <h3 class="text-sm font-bold text-slate-400 mb-3 tracking-wider">GESTION DES TOURNOIS</h3>
-                <div class="bg-dark-800 rounded-xl border border-dark-700 divide-y divide-dark-700" id="liste-gestion-tournois"></div>
+                <h3 class="text-xs font-bold text-slate-400 mb-3 tracking-wider uppercase flex items-center gap-1.5">
+                    <i class="ph-fill ph-trophy text-amber-400"></i>
+                    <span>Gestion des tournois</span>
+                </h3>
+                <div class="bg-dark-800 rounded-2xl border border-dark-700 divide-y divide-dark-700/80 overflow-hidden" id="liste-gestion-tournois"></div>
             </div>
 
             <!-- Section 4 : Onglet JOUEURS -->
             <div id="view-joueurs" class="hidden">
-                <div class="bg-dark-800 rounded-xl p-4 border border-dark-700 mb-6">
-                    <h3 class="font-bold text-white mb-3">Ajouter un joueur</h3>
+                <div class="bg-dark-800 rounded-2xl p-4 border border-dark-700 mb-6">
+                    <h3 class="font-bold text-white mb-3 flex items-center gap-2 text-sm">
+                        <i class="ph-fill ph-user-plus text-sky-400 text-base"></i>
+                        <span>Ajouter un joueur</span>
+                    </h3>
                     <form onsubmit="ajouterJoueur(event)" class="flex gap-2">
                         <div id="joueur-autocomplete-wrapper" class="relative flex-1">
                             <input type="text" id="input-new-joueur" placeholder="Pseudo PlayHub exact..." autocomplete="off"
                                 oninput="majSuggestionsJoueur()"
                                 onfocus="majSuggestionsJoueur()"
                                 onkeydown="gererClavierSuggestions(event)"
-                                class="w-full bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white placeholder-slate-500">
+                                class="w-full bg-dark-950 border border-dark-700 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:border-indigo-400 text-white placeholder-slate-500 transition-colors">
                             <!-- Suggestions issues de l'onglet Team (colonne A) -->
-                            <div id="suggestions-team" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-dark-800 border border-slate-600 rounded-xl shadow-2xl shadow-black/70 max-h-64 overflow-y-auto z-30 divide-y divide-dark-700/70"></div>
+                            <div id="suggestions-team" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-dark-800 border border-slate-600 rounded-xl shadow-2xl shadow-black/80 max-h-64 overflow-y-auto z-30 divide-y divide-dark-700/70"></div>
                         </div>
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Ajouter</button>
+                        <button type="submit" class="bg-[#5865F2] hover:bg-[#4752C4] text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors">Ajouter</button>
                     </form>
                 </div>
 
-                <h3 class="text-sm font-bold text-slate-400 mb-3 tracking-wider">GESTION DES JOUEURS</h3>
-                <div class="bg-dark-800 rounded-xl border border-dark-700 divide-y divide-dark-700" id="liste-gestion-joueurs"></div>
+                <h3 class="text-xs font-bold text-slate-400 mb-3 tracking-wider uppercase flex items-center gap-1.5">
+                    <i class="ph-fill ph-users-three text-sky-400"></i>
+                    <span>Gestion des joueurs</span>
+                </h3>
+                <div class="bg-dark-800 rounded-2xl border border-dark-700 divide-y divide-dark-700/80 overflow-hidden" id="liste-gestion-joueurs"></div>
             </div>
 
         </main>
@@ -197,13 +274,22 @@
         const AUTO_REFRESH_MS = 30000;
 
         const INK_STYLES = {
-            amber:    { color: '#FBBF24', ring: 'rgba(251, 191, 36, 0.35)',  label: 'Ambre' },
-            amethyst: { color: '#A855F7', ring: 'rgba(168, 85, 247, 0.35)',  label: 'Améthyste' },
-            emerald:  { color: '#22C55E', ring: 'rgba(34, 197, 94, 0.35)',   label: 'Émeraude' },
-            ruby:     { color: '#EF4444', ring: 'rgba(239, 68, 68, 0.35)',   label: 'Rubis' },
-            sapphire: { color: '#3B82F6', ring: 'rgba(59, 130, 246, 0.35)',  label: 'Saphir' },
-            steel:    { color: '#94A3B8', ring: 'rgba(203, 213, 225, 0.45)', label: 'Acier' }
+            amber:    { color: '#FBBF24', ring: 'rgba(251, 191, 36, 0.45)',  label: 'Ambre' },
+            amethyst: { color: '#C084FC', ring: 'rgba(192, 132, 252, 0.45)', label: 'Améthyste' },
+            emerald:  { color: '#34D399', ring: 'rgba(52, 211, 153, 0.45)',  label: 'Émeraude' },
+            ruby:     { color: '#F87171', ring: 'rgba(248, 113, 113, 0.45)', label: 'Rubis' },
+            sapphire: { color: '#60A5FA', ring: 'rgba(96, 165, 250, 0.45)',  label: 'Saphir' },
+            steel:    { color: '#CBD5E1', ring: 'rgba(203, 213, 225, 0.45)', label: 'Acier' }
         };
+
+        const PLAYER_AVATAR_COLORS = [
+            'bg-sky-600',
+            'bg-indigo-600',
+            'bg-emerald-600',
+            'bg-amber-600',
+            'bg-rose-600',
+            'bg-violet-600'
+        ];
 
         let motDePasseActuel = localStorage.getItem(STORAGE_KEY) || '';
         let donneesGlobales = { tournois: [], joueurs: [], team: [] };
@@ -215,12 +301,22 @@
         let suggestionIndex = -1;
         let suggestionsActuelles = [];
 
+        function getPlayerColor(pseudo) {
+            const s = String(pseudo || '');
+            let hash = 0;
+            for (let i = 0; i < s.length; i++) {
+                hash = ((hash << 5) - hash) + s.charCodeAt(i);
+                hash |= 0;
+            }
+            return PLAYER_AVATAR_COLORS[Math.abs(hash) % PLAYER_AVATAR_COLORS.length];
+        }
+
+        function retirerTagClient(pseudo) {
+            return String(pseudo || "").trim().replace(/^\[.*?\]\s*/, "").trim();
+        }
+
         function normaliserPseudoClient(pseudo) {
-            return String(pseudo || "")
-                .trim()
-                .replace(/^\[.*?\]\s*/, "")
-                .trim()
-                .toLowerCase();
+            return retirerTagClient(pseudo).toLowerCase();
         }
 
         function renderEncresHtml(encres) {
@@ -229,7 +325,7 @@
                 const key = String(ink || '').trim().toLowerCase();
                 const st = INK_STYLES[key];
                 if (!st) return '';
-                return `<span title="${st.label}" class="inline-block w-3.5 h-3.5 rounded-full flex-shrink-0 border border-white/25" style="background-color: ${st.color}; box-shadow: 0 0 6px ${st.ring};"></span>`;
+                return `<span title="${st.label}" class="inline-block w-3.5 h-3.5 rounded-full flex-shrink-0 border border-white/30" style="background-color: ${st.color}; box-shadow: 0 0 6px ${st.ring};"></span>`;
             }).join('');
             return dots ? `<span class="inline-flex items-center gap-1 ml-1">${dots}</span>` : '';
         }
@@ -323,14 +419,14 @@
                 const estSelectionne = idx === suggestionIndex;
                 const pseudoEchappe = pseudo.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
                 const badgeDejaSuivi = dejaAjoute
-                    ? `<span class="text-[11px] px-2 py-0.5 rounded-full flex-shrink-0 bg-slate-700 text-slate-400">Déjà suivi</span>`
+                    ? `<span class="text-[11px] px-2 py-0.5 rounded-full flex-shrink-0 bg-slate-700 text-slate-300">Déjà suivi</span>`
                     : '';
 
                 return `
                     <button type="button"
                         onpointerdown="event.preventDefault(); selectionnerSuggestionJoueur('${pseudoEchappe}')"
-                        class="w-full px-3.5 py-2.5 text-left flex items-center justify-between gap-2 transition-colors ${estSelectionne ? 'bg-blue-600/30 text-white' : 'hover:bg-slate-700/70 text-slate-200'}">
-                        <span class="flex items-center gap-2 truncate text-sm font-medium">
+                        class="w-full px-3.5 py-2.5 text-left flex items-center justify-between gap-2 transition-colors ${estSelectionne ? 'bg-indigo-600/30 text-white' : 'hover:bg-slate-800 text-slate-200'}">
+                        <span class="flex items-center gap-2.5 truncate text-sm font-medium">
                             <i class="ph-fill ph-users-three text-[#5865F2] flex-shrink-0"></i>
                             <span class="truncate">${pseudo}</span>
                         </span>
@@ -459,11 +555,11 @@
             ['recap', 'tournois', 'joueurs'].forEach(t => {
                 document.getElementById('view-' + t).classList.add('hidden');
                 document.getElementById('view-' + t).classList.remove('block');
-                document.getElementById('tab-' + t).className = "pb-3 tab-inactive";
+                document.getElementById('tab-' + t).className = "px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 tab-inactive";
             });
             document.getElementById('view-' + tabName).classList.add('block');
             document.getElementById('view-' + tabName).classList.remove('hidden');
-            document.getElementById('tab-' + tabName).className = "pb-3 tab-active";
+            document.getElementById('tab-' + tabName).className = "px-3.5 py-2 rounded-xl transition-colors flex items-center gap-1.5 tab-active";
         }
 
         function toggleLoader(show, text = "") {
@@ -490,9 +586,16 @@
                 team: data.team || donneesGlobales.team || []
             };
 
+            const reqJourNum = Number(data.compteurs.reqJour || 0);
             document.getElementById('val-date-run').textContent = data.compteurs.date || "Aucune run";
             document.getElementById('val-req-session').textContent = data.compteurs.reqSession || "0";
-            document.getElementById('val-req-jour').textContent = data.compteurs.reqJour || "0";
+            document.getElementById('val-req-jour').textContent = reqJourNum;
+
+            const barEl = document.getElementById('bar-req-jour');
+            if (barEl) {
+                const pct = Math.min(100, Math.max(reqJourNum > 0 ? 3 : 0, (reqJourNum / 20000) * 100));
+                barEl.style.width = `${pct}%`;
+            }
 
             renderRecap();
             renderGestionTournois();
@@ -624,12 +727,14 @@
                 if (!t) return;
                 t.actif = estCoche;
                 renderRecap();
+                renderGestionTournois();
                 posterAction('toggleTournoi', { ligne: t.ligne, id: t.id, valeur: estCoche });
             } else {
                 const j = donneesGlobales.joueurs[index];
                 if (!j) return;
                 j.actif = estCoche;
                 renderRecap();
+                renderGestionJoueurs();
                 posterAction('toggleJoueur', { ligne: j.ligne, pseudo: j.pseudo, valeur: estCoche });
             }
         }
@@ -722,7 +827,7 @@
             const tournoisActifs = donneesGlobales.tournois.filter(t => t.actif);
             
             if (tournoisActifs.length === 0) {
-                container.innerHTML = '<div class="text-center py-8 text-slate-500 text-sm italic">Aucun tournoi actif.</div>';
+                container.innerHTML = '<div class="text-center py-10 bg-dark-800 rounded-2xl border border-dashed border-dark-700 text-slate-400 text-sm">Aucun tournoi actif pour le moment.</div>';
                 return;
             }
 
@@ -740,19 +845,25 @@
                     return estInscrit || aUnPairing;
                 });
 
-                const badgeStatut = t.statut === "IN_PROGRESS" 
-                    ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-900/40 text-green-400 border border-green-800 animate-pulse flex-shrink-0">LIVE</span>'
-                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700 flex-shrink-0">${t.statut || 'EN ATTENTE'}</span>`;
+                const estLive = t.statut === "IN_PROGRESS";
+
+                const cardBorderClass = estLive
+                    ? 'border-emerald-500/35'
+                    : 'border-dark-700';
+
+                const badgeStatut = estLive
+                    ? '<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider bg-emerald-500/15 text-emerald-300 border border-emerald-400/35 flex items-center gap-1.5 flex-shrink-0"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>LIVE</span>'
+                    : `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wider bg-slate-800 text-slate-300 border border-slate-700 flex-shrink-0">${t.statut || 'EN ATTENTE'}</span>`;
 
                 const titreRondeHtml = t.rondeEnCours
-                    ? `<span class="font-normal text-slate-300 text-sm whitespace-nowrap flex-shrink-0">- ${t.rondeEnCours}</span>`
+                    ? `<span class="font-normal text-slate-300 text-xs sm:text-sm whitespace-nowrap flex-shrink-0">- ${t.rondeEnCours}</span>`
                     : '';
 
                 let htmlCard = `
-                    <div class="bg-dark-800 rounded-xl border border-dark-700 overflow-hidden">
-                        <div class="p-3.5 bg-dark-800 border-b border-dark-700 flex justify-between items-center gap-3">
+                    <div class="bg-dark-800 rounded-2xl border ${cardBorderClass} overflow-hidden">
+                        <div class="px-4 py-3.5 bg-[#182238] border-b border-dark-700 flex justify-between items-center gap-3">
                             <div class="min-w-0 flex items-center gap-1.5">
-                                <a href="https://tcg.ravensburgerplay.com/events/${t.id}" target="_blank" rel="noopener" class="font-bold text-white text-sm hover:text-blue-400 hover:underline truncate">
+                                <a href="https://tcg.ravensburgerplay.com/events/${t.id}" target="_blank" rel="noopener" class="font-bold text-white text-sm sm:text-base hover:text-indigo-300 hover:underline truncate transition-colors">
                                     ${t.nom}
                                 </a>
                                 ${titreRondeHtml}
@@ -771,11 +882,14 @@
                             normaliserPseudoClient(p.joueurPseudo) === cleJoueur
                         );
 
+                        const avatarColor = getPlayerColor(j.pseudo);
+                        const initiale = (retirerTagClient(j.pseudo).charAt(0) || '?').toUpperCase();
+
                         let detailsHtml = '';
                         if (pairing) {
                             if (pairing.isBye) {
                                 detailsHtml = `
-                                    <span class="px-2.5 py-0.5 rounded bg-amber-900/30 border border-amber-700/50 text-amber-300 text-xs font-semibold">
+                                    <span class="px-2.5 py-0.5 rounded-lg bg-amber-500/15 border border-amber-400/35 text-amber-300 text-xs font-bold tracking-wide ml-auto">
                                         BYE
                                     </span>
                                 `;
@@ -787,13 +901,13 @@
                                 const encresHtml = renderEncresHtml(pairing.adversaireEncres);
 
                                 detailsHtml = `
-                                    <div class="flex items-center gap-3 text-xs sm:text-sm ml-auto">
-                                        <span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 font-medium whitespace-nowrap">
-                                            Table <strong class="text-white">${tableTxt}</strong>
+                                    <div class="flex items-center gap-2.5 sm:gap-3 text-xs sm:text-sm ml-auto">
+                                        <span class="px-2.5 py-0.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-300 font-medium whitespace-nowrap">
+                                            Table <strong class="text-white font-bold">${tableTxt}</strong>
                                         </span>
-                                        <div class="flex items-center gap-1.5 text-slate-300">
-                                            <span class="text-slate-500 text-xs">vs</span>
-                                            <span class="font-medium text-slate-200 truncate max-w-[145px] sm:max-w-[220px]">${advPseudo}</span>
+                                        <div class="flex items-center gap-1.5 text-slate-200">
+                                            <span class="text-slate-500 text-xs font-medium">vs</span>
+                                            <span class="font-medium text-white truncate max-w-[140px] sm:max-w-[220px]">${advPseudo}</span>
                                             ${encresHtml}
                                         </div>
                                     </div>
@@ -804,9 +918,11 @@
                         }
 
                         htmlCard += `
-                            <div class="px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 hover:bg-dark-800/40 transition-colors">
-                                <div class="flex items-center gap-2 min-w-[110px]">
-                                    <i class="ph-fill ph-user text-blue-400 text-sm flex-shrink-0"></i>
+                            <div class="px-4 py-3 flex flex-wrap items-center justify-between gap-2 hover:bg-slate-800/40 transition-colors">
+                                <div class="flex items-center gap-2.5 min-w-[115px]">
+                                    <span class="h-6 w-6 rounded-lg ${avatarColor} text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                                        ${initiale}
+                                    </span>
                                     <span class="font-semibold text-white text-sm truncate">${j.pseudo}</span>
                                 </div>
                                 ${detailsHtml}
@@ -815,7 +931,7 @@
                     });
                     htmlCard += `</div>`;
                 } else {
-                    htmlCard += `<div class="p-3.5"><span class="text-xs text-slate-500 italic">Aucun joueur suivi inscrit pour le moment.</span></div>`;
+                    htmlCard += `<div class="px-4 py-3.5"><span class="text-xs text-slate-400 italic">Aucun joueur suivi inscrit pour le moment.</span></div>`;
                 }
 
                 htmlCard += `</div></div>`;
@@ -825,14 +941,22 @@
 
         function createToggleRow(titre, sousTitre, actif, index, type, urlPart = null) {
             const textHTML = urlPart 
-                ? `<a href="${urlPart}" target="_blank" rel="noopener" class="font-medium text-white text-sm hover:text-blue-400 hover:underline flex items-center gap-1.5">${titre} <i class="ph ph-arrow-square-out text-xs text-slate-500"></i></a>`
-                : `<div class="font-medium text-white text-sm truncate">${titre}</div>`;
+                ? `<a href="${urlPart}" target="_blank" rel="noopener" class="font-medium ${actif ? 'text-white' : 'text-slate-400'} text-sm hover:text-indigo-300 hover:underline flex items-center gap-1.5 transition-colors">${titre} <i class="ph ph-arrow-square-out text-xs text-slate-500"></i></a>`
+                : `<div class="font-medium ${actif ? 'text-white' : 'text-slate-400'} text-sm truncate transition-colors">${titre}</div>`;
+
+            const avatarColor = getPlayerColor(titre);
+            const badgeIconHtml = type === 'joueur'
+                ? `<span class="h-7 w-7 rounded-lg ${avatarColor} ${actif ? 'opacity-100' : 'opacity-40'} text-white text-xs font-bold flex items-center justify-center flex-shrink-0 transition-opacity">${(retirerTagClient(titre).charAt(0) || '?').toUpperCase()}</span>`
+                : `<span class="h-7 w-7 rounded-lg ${actif ? 'bg-amber-500/15 border-amber-400/30 text-amber-400' : 'bg-slate-800 border-slate-700 text-slate-500'} border flex items-center justify-center flex-shrink-0 transition-colors"><i class="ph-fill ph-trophy text-sm"></i></span>`;
 
             return `
-                <div class="p-4 flex items-center justify-between hover:bg-dark-900/50 transition-colors">
-                    <div class="truncate pr-4 flex-1">
-                        ${textHTML}
-                        ${sousTitre ? `<div class="text-xs text-slate-500 truncate mt-0.5">${sousTitre}</div>` : ''}
+                <div class="px-4 py-3.5 flex items-center justify-between gap-3 hover:bg-slate-800/40 transition-colors">
+                    <div class="flex items-center gap-3 min-w-0 flex-1">
+                        ${badgeIconHtml}
+                        <div class="truncate flex-1">
+                            ${textHTML}
+                            ${sousTitre ? `<div class="text-xs text-slate-500 truncate mt-0.5">${sousTitre}</div>` : ''}
+                        </div>
                     </div>
                     <div class="flex items-center gap-4">
                         <!-- Switch Actif -->
@@ -841,7 +965,7 @@
                             <label for="toggle-${type}-${index}" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-700 cursor-pointer transition-colors duration-300"></label>
                         </div>
                         <!-- Bouton Poubelle -->
-                        <button onclick="supprimerItem('${type}', ${index})" class="text-slate-500 hover:text-red-400 p-1.5 hover:bg-slate-700/50 rounded-lg transition-colors" title="Supprimer définitivement">
+                        <button onclick="supprimerItem('${type}', ${index})" class="text-slate-400 hover:text-red-400 p-1.5 hover:bg-slate-800 rounded-lg transition-colors" title="Supprimer définitivement">
                             <i class="ph ph-trash text-lg"></i>
                         </button>
                     </div>
@@ -856,7 +980,7 @@
                 container.innerHTML += createToggleRow(t.nom, `ID: ${t.id}`, t.actif, index, 'tournoi', `https://tcg.ravensburgerplay.com/events/${t.id}`);
             });
             if (donneesGlobales.tournois.length === 0) {
-                container.innerHTML = '<div class="p-4 text-center text-sm text-slate-500 italic">Aucun tournoi enregistré.</div>';
+                container.innerHTML = '<div class="p-6 text-center text-sm text-slate-400 italic">Aucun tournoi enregistré.</div>';
             }
         }
 
@@ -867,7 +991,7 @@
                 container.innerHTML += createToggleRow(j.pseudo, null, j.actif, index, 'joueur');
             });
             if (donneesGlobales.joueurs.length === 0) {
-                container.innerHTML = '<div class="p-4 text-center text-sm text-slate-500 italic">Aucun joueur enregistré.</div>';
+                container.innerHTML = '<div class="p-6 text-center text-sm text-slate-400 italic">Aucun joueur enregistré.</div>';
             }
         }
 
