@@ -165,7 +165,15 @@
                 <div class="bg-dark-800 rounded-xl p-4 border border-dark-700 mb-6">
                     <h3 class="font-bold text-white mb-3">Ajouter un joueur</h3>
                     <form onsubmit="ajouterJoueur(event)" class="flex gap-2">
-                        <input type="text" id="input-new-joueur" placeholder="Pseudo PlayHub exact..." class="flex-1 bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white placeholder-slate-500">
+                        <div id="joueur-autocomplete-wrapper" class="relative flex-1">
+                            <input type="text" id="input-new-joueur" placeholder="Pseudo PlayHub exact..." autocomplete="off"
+                                oninput="majSuggestionsJoueur()"
+                                onfocus="majSuggestionsJoueur()"
+                                onkeydown="gererClavierSuggestions(event)"
+                                class="w-full bg-dark-900 border border-dark-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white placeholder-slate-500">
+                            <!-- Suggestions issues de l'onglet Team (colonne A) -->
+                            <div id="suggestions-team" class="hidden absolute left-0 right-0 top-full mt-1.5 bg-dark-800 border border-slate-600 rounded-xl shadow-2xl shadow-black/70 overflow-hidden z-30 divide-y divide-dark-700/70"></div>
+                        </div>
                         <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Ajouter</button>
                     </form>
                 </div>
@@ -183,10 +191,129 @@
         const AUTO_REFRESH_MS = 30000;
 
         let motDePasseActuel = localStorage.getItem(STORAGE_KEY) || '';
-        let donneesGlobales = { tournois: [], joueurs: [] };
+        let donneesGlobales = { tournois: [], joueurs: [], team: [] };
         let autoRefreshTimer = null;
         let syncEnCours = false;
         let requetesEcritureEnCours = 0;
+
+        let suggestionIndex = -1;
+        let suggestionsActuelles = [];
+
+        function normaliserTexteRecherche(str) {
+            return String(str || "")
+                .toLowerCase()
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "");
+        }
+
+        function fermerSuggestionsJoueur() {
+            const box = document.getElementById('suggestions-team');
+            if (box) {
+                box.classList.add('hidden');
+                box.innerHTML = '';
+            }
+            suggestionIndex = -1;
+            suggestionsActuelles = [];
+        }
+
+        function selectionnerSuggestionJoueur(pseudo) {
+            const input = document.getElementById('input-new-joueur');
+            input.value = pseudo;
+            fermerSuggestionsJoueur();
+            input.focus();
+        }
+
+        function majSuggestionsJoueur() {
+            const input = document.getElementById('input-new-joueur');
+            const box = document.getElementById('suggestions-team');
+            if (!input || !box) return;
+
+            const brut = input.value.trim();
+            const q = normaliserTexteRecherche(brut);
+
+            if (!q || !Array.isArray(donneesGlobales.team) || donneesGlobales.team.length === 0) {
+                fermerSuggestionsJoueur();
+                return;
+            }
+
+            const matches = donneesGlobales.team
+                .filter(pseudo => normaliserTexteRecherche(pseudo).includes(q))
+                .sort((a, b) => {
+                    const normA = normaliserTexteRecherche(a).replace(/^\[.*?\]\s*/, '');
+                    const normB = normaliserTexteRecherche(b).replace(/^\[.*?\]\s*/, '');
+                    const startsA = normA.startsWith(q) ? 0 : 1;
+                    const startsB = normB.startsWith(q) ? 0 : 1;
+                    if (startsA !== startsB) return startsA - startsB;
+                    return a.localeCompare(b);
+                })
+                .slice(0, 6);
+
+            if (matches.length === 0) {
+                fermerSuggestionsJoueur();
+                return;
+            }
+
+            suggestionsActuelles = matches;
+            suggestionIndex = -1;
+            afficherListeSuggestions();
+        }
+
+        function afficherListeSuggestions() {
+            const box = document.getElementById('suggestions-team');
+            if (!box || suggestionsActuelles.length === 0) return;
+
+            const pseudosDejaSuivis = new Set(
+                (donneesGlobales.joueurs || []).map(j => String(j.pseudo || "").trim().toLowerCase())
+            );
+
+            box.innerHTML = suggestionsActuelles.map((pseudo, idx) => {
+                const dejaAjoute = pseudosDejaSuivis.has(pseudo.toLowerCase());
+                const estSelectionne = idx === suggestionIndex;
+                const pseudoEchappe = pseudo.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+
+                return `
+                    <button type="button"
+                        onpointerdown="event.preventDefault(); selectionnerSuggestionJoueur('${pseudoEchappe}')"
+                        class="w-full px-3.5 py-2.5 text-left flex items-center justify-between gap-2 transition-colors ${estSelectionne ? 'bg-blue-600/30 text-white' : 'hover:bg-slate-700/70 text-slate-200'}">
+                        <span class="flex items-center gap-2 truncate text-sm font-medium">
+                            <i class="ph-fill ph-users-three text-[#5865F2] flex-shrink-0"></i>
+                            <span class="truncate">${pseudo}</span>
+                        </span>
+                        <span class="text-[11px] px-2 py-0.5 rounded-full flex-shrink-0 ${dejaAjoute ? 'bg-slate-700 text-slate-400' : 'bg-[#5865F2]/20 text-indigo-300 border border-[#5865F2]/30'}">
+                            ${dejaAjoute ? 'Déjà dans la liste' : 'Team'}
+                        </span>
+                    </button>
+                `;
+            }).join('');
+
+            box.classList.remove('hidden');
+        }
+
+        function gererClavierSuggestions(event) {
+            if (suggestionsActuelles.length === 0) return;
+
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                suggestionIndex = (suggestionIndex + 1) % suggestionsActuelles.length;
+                afficherListeSuggestions();
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                suggestionIndex = (suggestionIndex - 1 + suggestionsActuelles.length) % suggestionsActuelles.length;
+                afficherListeSuggestions();
+            } else if (event.key === 'Escape') {
+                fermerSuggestionsJoueur();
+            } else if (event.key === 'Enter' && suggestionIndex >= 0) {
+                event.preventDefault();
+                selectionnerSuggestionJoueur(suggestionsActuelles[suggestionIndex]);
+            }
+        }
+
+        document.addEventListener('pointerdown', (event) => {
+            const wrapper = document.getElementById('joueur-autocomplete-wrapper');
+            if (wrapper && !wrapper.contains(event.target)) {
+                fermerSuggestionsJoueur();
+            }
+        });
 
         function demarrerAutoRefresh() {
             arreterAutoRefresh();
@@ -222,6 +349,7 @@
 
         function afficherEcranConnexion(messageErreur = "") {
             arreterAutoRefresh();
+            fermerSuggestionsJoueur();
             document.getElementById('app-container').classList.add('hidden');
             document.getElementById('login-screen').classList.remove('hidden');
             const errEl = document.getElementById('login-error');
@@ -240,9 +368,10 @@
 
         function deconnexion() {
             arreterAutoRefresh();
+            fermerSuggestionsJoueur();
             localStorage.removeItem(STORAGE_KEY);
             motDePasseActuel = '';
-            donneesGlobales = { tournois: [], joueurs: [] };
+            donneesGlobales = { tournois: [], joueurs: [], team: [] };
             document.getElementById('input-password').value = '';
             afficherEcranConnexion();
         }
@@ -269,6 +398,7 @@
         }
 
         function switchTab(tabName) {
+            fermerSuggestionsJoueur();
             ['recap', 'tournois', 'joueurs'].forEach(t => {
                 document.getElementById('view-' + t).classList.add('hidden');
                 document.getElementById('view-' + t).classList.remove('block');
@@ -297,7 +427,11 @@
         }
 
         function appliquerDonneesRecues(data) {
-            donneesGlobales = data;
+            donneesGlobales = {
+                tournois: data.tournois || [],
+                joueurs: data.joueurs || [],
+                team: data.team || donneesGlobales.team || []
+            };
 
             document.getElementById('val-date-run').textContent = data.compteurs.date || "Aucune run";
             document.getElementById('val-req-session').textContent = data.compteurs.reqSession || "0";
@@ -306,6 +440,11 @@
             renderRecap();
             renderGestionTournois();
             renderGestionJoueurs();
+
+            const inputJoueur = document.getElementById('input-new-joueur');
+            if (inputJoueur && document.activeElement === inputJoueur && inputJoueur.value.trim()) {
+                majSuggestionsJoueur();
+            }
         }
 
         // --- LECTURE ---
@@ -471,6 +610,7 @@
             const val = input.value.trim();
             if (!val) return;
             input.value = "";
+            fermerSuggestionsJoueur();
 
             // Affichage immédiat dans l'interface
             donneesGlobales.joueurs.push({
