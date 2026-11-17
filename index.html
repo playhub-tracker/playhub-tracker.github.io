@@ -196,6 +196,15 @@
         const STORAGE_KEY = 'playhub_tracker_pwd';
         const AUTO_REFRESH_MS = 30000;
 
+        const INK_STYLES = {
+            amber:    { color: '#FBBF24', ring: 'rgba(251, 191, 36, 0.35)',  label: 'Ambre' },
+            amethyst: { color: '#A855F7', ring: 'rgba(168, 85, 247, 0.35)',  label: 'Améthyste' },
+            emerald:  { color: '#22C55E', ring: 'rgba(34, 197, 94, 0.35)',   label: 'Émeraude' },
+            ruby:     { color: '#EF4444', ring: 'rgba(239, 68, 68, 0.35)',   label: 'Rubis' },
+            sapphire: { color: '#3B82F6', ring: 'rgba(59, 130, 246, 0.35)',  label: 'Saphir' },
+            steel:    { color: '#94A3B8', ring: 'rgba(203, 213, 225, 0.45)', label: 'Acier' }
+        };
+
         let motDePasseActuel = localStorage.getItem(STORAGE_KEY) || '';
         let donneesGlobales = { tournois: [], joueurs: [], team: [] };
         let autoRefreshTimer = null;
@@ -205,6 +214,25 @@
 
         let suggestionIndex = -1;
         let suggestionsActuelles = [];
+
+        function normaliserPseudoClient(pseudo) {
+            return String(pseudo || "")
+                .trim()
+                .replace(/^\[.*?\]\s*/, "")
+                .trim()
+                .toLowerCase();
+        }
+
+        function renderEncresHtml(encres) {
+            if (!Array.isArray(encres) || encres.length === 0) return '';
+            const dots = encres.map(ink => {
+                const key = String(ink || '').trim().toLowerCase();
+                const st = INK_STYLES[key];
+                if (!st) return '';
+                return `<span title="${st.label}" class="inline-block w-3.5 h-3.5 rounded-full flex-shrink-0 border border-white/25" style="background-color: ${st.color}; box-shadow: 0 0 6px ${st.ring};"></span>`;
+            }).join('');
+            return dots ? `<span class="inline-flex items-center gap-1 ml-1">${dots}</span>` : '';
+        }
 
         function afficherToastAlerte(message) {
             const el = document.getElementById('toast-alert');
@@ -613,13 +641,14 @@
 
             input.value = "";
 
-            // Affichage immédiat dans l'interface
             donneesGlobales.tournois.push({
                 ligne: -1,
                 actif: true,
                 id: val,
                 nom: `Tournoi ${val}`,
-                statut: ""
+                statut: "",
+                rondeEnCours: "",
+                pairings: []
             });
             renderGestionTournois();
             renderRecap();
@@ -646,7 +675,6 @@
 
             input.value = "";
 
-            // Affichage immédiat dans l'interface
             donneesGlobales.joueurs.push({
                 ligne: -1,
                 actif: true,
@@ -693,36 +721,95 @@
             }
 
             tournoisActifs.forEach(t => {
-                const joueursDuTournoi = donneesGlobales.joueurs.filter(j => 
-                    j.actif && j.tournois.includes(t.id)
-                );
+                const pairingsTournoi = Array.isArray(t.pairings) ? t.pairings : [];
 
-                let badgeStatut = t.statut === "IN_PROGRESS" 
-                    ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-900/40 text-green-400 border border-green-800 animate-pulse">LIVE</span>'
-                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">${t.statut || 'EN ATTENTE'}</span>`;
+                const joueursDuTournoi = donneesGlobales.joueurs.filter(j => {
+                    if (!j.actif) return false;
+                    const cleJoueur = normaliserPseudoClient(j.pseudo);
+                    const estInscrit = String(j.tournois || "").split(",").map(s => s.trim()).includes(t.id);
+                    const aUnPairing = pairingsTournoi.some(p =>
+                        (p.cleNormalisee && p.cleNormalisee === cleJoueur) ||
+                        normaliserPseudoClient(p.joueurPseudo) === cleJoueur
+                    );
+                    return estInscrit || aUnPairing;
+                });
+
+                const badgeStatut = t.statut === "IN_PROGRESS" 
+                    ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-900/40 text-green-400 border border-green-800 animate-pulse flex-shrink-0">LIVE</span>'
+                    : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700 flex-shrink-0">${t.statut || 'EN ATTENTE'}</span>`;
+
+                const titreRondeHtml = t.rondeEnCours
+                    ? ` <span class="font-normal text-slate-300">- ${t.rondeEnCours}</span>`
+                    : '';
 
                 let htmlCard = `
                     <div class="bg-dark-800 rounded-xl border border-dark-700 overflow-hidden">
-                        <div class="p-3 bg-dark-800 border-b border-dark-700 flex justify-between items-center">
-                            <a href="https://tcg.ravensburgerplay.com/events/${t.id}" target="_blank" rel="noopener" class="font-bold text-white text-sm hover:text-blue-400 hover:underline flex items-center gap-1.5 truncate pr-2">
-                                ${t.nom}
-                                <i class="ph ph-arrow-square-out text-xs text-slate-400 flex-shrink-0"></i>
+                        <div class="p-3.5 bg-dark-800 border-b border-dark-700 flex justify-between items-center gap-3">
+                            <a href="https://tcg.ravensburgerplay.com/events/${t.id}" target="_blank" rel="noopener" class="font-bold text-white text-sm hover:text-blue-400 hover:underline truncate">
+                                ${t.nom}${titreRondeHtml}
                             </a>
                             ${badgeStatut}
                         </div>
-                        <div class="p-3 bg-dark-900/50">
-                            <div class="flex flex-wrap gap-2">
+                        <div class="bg-dark-900/50">
                 `;
 
                 if (joueursDuTournoi.length > 0) {
+                    htmlCard += `<div class="divide-y divide-dark-700/70">`;
                     joueursDuTournoi.forEach(j => {
-                        htmlCard += `<span class="px-2.5 py-1 bg-slate-800 text-slate-300 text-xs font-medium rounded-md border border-slate-700 flex items-center gap-1.5"><i class="ph-fill ph-user text-slate-500"></i> ${j.pseudo}</span>`;
+                        const cleJoueur = normaliserPseudoClient(j.pseudo);
+                        const pairing = pairingsTournoi.find(p =>
+                            (p.cleNormalisee && p.cleNormalisee === cleJoueur) ||
+                            normaliserPseudoClient(p.joueurPseudo) === cleJoueur
+                        );
+
+                        let detailsHtml = '';
+                        if (pairing) {
+                            if (pairing.isBye) {
+                                detailsHtml = `
+                                    <span class="px-2.5 py-0.5 rounded bg-amber-900/30 border border-amber-700/50 text-amber-300 text-xs font-semibold">
+                                        BYE
+                                    </span>
+                                `;
+                            } else {
+                                const tableTxt = (pairing.table !== null && pairing.table !== undefined && String(pairing.table).trim() !== "")
+                                    ? String(pairing.table).trim()
+                                    : "?";
+                                const advPseudo = pairing.adversairePseudo || "Inconnu";
+                                const encresHtml = renderEncresHtml(pairing.adversaireEncres);
+
+                                detailsHtml = `
+                                    <div class="flex items-center gap-3 text-xs sm:text-sm ml-auto">
+                                        <span class="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300 font-medium whitespace-nowrap">
+                                            Table <strong class="text-white">${tableTxt}</strong>
+                                        </span>
+                                        <div class="flex items-center gap-1.5 text-slate-300">
+                                            <span class="text-slate-500 text-xs">vs</span>
+                                            <span class="font-medium text-slate-200 truncate max-w-[145px] sm:max-w-[220px]">${advPseudo}</span>
+                                            ${encresHtml}
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        } else {
+                            detailsHtml = `<span class="text-xs text-slate-500 italic ml-auto">En attente</span>`;
+                        }
+
+                        htmlCard += `
+                            <div class="px-3.5 py-2.5 flex flex-wrap items-center justify-between gap-2 hover:bg-dark-800/40 transition-colors">
+                                <div class="flex items-center gap-2 min-w-[110px]">
+                                    <i class="ph-fill ph-user text-blue-400 text-sm flex-shrink-0"></i>
+                                    <span class="font-semibold text-white text-sm truncate">${j.pseudo}</span>
+                                </div>
+                                ${detailsHtml}
+                            </div>
+                        `;
                     });
+                    htmlCard += `</div>`;
                 } else {
-                    htmlCard += `<span class="text-xs text-slate-500 italic">Aucun joueur suivi inscrit pour le moment.</span>`;
+                    htmlCard += `<div class="p-3.5"><span class="text-xs text-slate-500 italic">Aucun joueur suivi inscrit pour le moment.</span></div>`;
                 }
 
-                htmlCard += `</div></div></div>`;
+                htmlCard += `</div></div>`;
                 container.innerHTML += htmlCard;
             });
         }
