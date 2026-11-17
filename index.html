@@ -672,7 +672,6 @@
             } else {
                 const j = donneesGlobales.joueurs[index];
                 if (!j) return;
-                if (!confirm(`⚠️ Confirmation : Supprimer définitivement le joueur "${j.pseudo}" de Google Sheets ?`)) return;
 
                 donneesGlobales.joueurs.splice(index, 1);
                 renderGestionJoueurs();
