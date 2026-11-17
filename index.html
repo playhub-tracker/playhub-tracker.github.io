@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Playhub Tracker Admin</title>
+    
+    <!-- Favicon SVG Embarquée (Logo Discord Violet) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Ccircle cx='64' cy='64' r='64' fill='%235865F2'/%3E%3Cpath d='M93.3 43.5s-6.3-5.3-13.8-6.1c0 0-.8 1.6-1.5 3.3-8.6-1.3-17.1-1.3-25.5 0-.7-1.6-1.6-3.3-1.6-3.3-7.5.8-13.8 6.1-13.8 6.1s-7.7 13.8-6.1 34.5c4.7 6.4 13.5 10.4 22 10.7 0 0 2.6-3.1 4.7-5.8-7.5-2.2-12.7-7.1-12.7-7.1s.6.4 1.7.9c6.6 3 13 4.8 21.6 5.5 8.7.7 17.5.3 26.1-1.3 4.1-.7 8.7-1.9 13.3-3.9 0 0-5.1 4.7-12.2 7 2.1 2.6 4.7 5.6 4.7 5.6 8.5-.3 17.3-4.3 22-10.7 1.6-20.7-6.1-34.5-6.1-34.5zm-38.3 24.6c-4.4 0-8-3.9-8-8.7s3.6-8.7 8-8.7 8 3.9 8 8.7-3.6 8.7-8 8.7zm20 0c-4.4 0-8-3.9-8-8.7s3.6-8.7 8-8.7 8 3.9 8 8.7-3.6 8.7-8 8.7z' fill='%23ffffff'/%3E%3C/svg%3E">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -79,7 +83,7 @@
         </div>
     </div>
 
-    <!-- APPLICATION PRINCIPALE (Masquée tant que non authentifiée) -->
+    <!-- APPLICATION PRINCIPALE -->
     <div id="app-container" class="hidden">
         <!-- En-tête -->
         <header class="bg-dark-800 border-b border-dark-700 sticky top-0 z-10">
@@ -127,7 +131,7 @@
                     <div class="text-xs font-bold tracking-wider text-slate-400 mb-1">REQUÊTES AUJOURD'HUI</div>
                     <div class="flex items-end gap-2">
                         <div id="val-req-jour" class="text-3xl font-black text-amber-400">--</div>
-                        <div class="text-sm text-slate-400 font-medium mb-1.5">/ 20 000</div>
+                        <div class="text-sm text-slate-400 font-medium mb-1 mb-1.5">/ 20 000</div>
                     </div>
                 </div>
             </div>
@@ -280,7 +284,6 @@
                     throw new Error(data.error);
                 }
 
-                // Authentification réussie : mémorisation et affichage
                 motDePasseActuel = pwdAUtiliser;
                 localStorage.setItem(STORAGE_KEY, pwdAUtiliser);
                 afficherApplication();
@@ -357,6 +360,13 @@
             posterAction('addJoueur', { pseudo: val });
         }
 
+        function supprimerItem(type, ligne, nom) {
+            const element = type === 'tournoi' ? 'le tournoi' : 'le joueur';
+            if (confirm(`⚠️ Confirmation : Supprimer définitivement ${element} "${nom}" de Google Sheets ?`)) {
+                posterAction(type === 'tournoi' ? 'deleteTournoi' : 'deleteJoueur', { ligne: ligne });
+            }
+        }
+
         // --- AFFICHAGE (RENDERS) ---
         function renderRecap() {
             const container = document.getElementById('liste-recap');
@@ -375,13 +385,16 @@
                 );
 
                 let badgeStatut = t.statut === "IN_PROGRESS" 
-                    ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-900/40 text-green-400 border border-green-800">LIVE</span>'
+                    ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-green-900/40 text-green-400 border border-green-800 animate-pulse">LIVE</span>'
                     : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">${t.statut || 'INCONNU'}</span>`;
 
                 let htmlCard = `
                     <div class="bg-dark-800 rounded-xl border border-dark-700 overflow-hidden">
                         <div class="p-3 bg-dark-800 border-b border-dark-700 flex justify-between items-center">
-                            <div class="font-bold text-white text-sm truncate pr-2">${t.nom}</div>
+                            <a href="https://tcg.ravensburgerplay.com/events/${t.id}" target="_blank" rel="noopener" class="font-bold text-white text-sm hover:text-blue-400 hover:underline flex items-center gap-1.5 truncate pr-2">
+                                ${t.nom}
+                                <i class="ph ph-arrow-square-out text-xs text-slate-400 flex-shrink-0"></i>
+                            </a>
                             ${badgeStatut}
                         </div>
                         <div class="p-3 bg-dark-900/50">
@@ -401,16 +414,27 @@
             });
         }
 
-        function createToggleRow(titre, sousTitre, actif, ligne, type) {
+        function createToggleRow(titre, sousTitre, actif, ligne, type, urlPart = null) {
+            const textHTML = urlPart 
+                ? `<a href="${urlPart}" target="_blank" rel="noopener" class="font-medium text-white text-sm hover:text-blue-400 hover:underline flex items-center gap-1.5">${titre} <i class="ph ph-arrow-square-out text-xs text-slate-500"></i></a>`
+                : `<div class="font-medium text-white text-sm truncate">${titre}</div>`;
+
             return `
                 <div class="p-4 flex items-center justify-between hover:bg-dark-900/50 transition-colors">
-                    <div class="truncate pr-4">
-                        <div class="font-medium text-white text-sm truncate">${titre}</div>
+                    <div class="truncate pr-4 flex-1">
+                        ${textHTML}
                         ${sousTitre ? `<div class="text-xs text-slate-500 truncate mt-0.5">${sousTitre}</div>` : ''}
                     </div>
-                    <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                        <input type="checkbox" name="toggle" id="toggle-${type}-${ligne}" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-600 transition-all duration-300" ${actif ? 'checked' : ''} onchange="toggleItem('${type}', ${ligne}, this)"/>
-                        <label for="toggle-${type}-${ligne}" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-700 cursor-pointer transition-colors duration-300"></label>
+                    <div class="flex items-center gap-4">
+                        <!-- Switch Actif -->
+                        <div class="relative inline-block w-10 align-middle select-none transition duration-200 ease-in">
+                            <input type="checkbox" name="toggle" id="toggle-${type}-${ligne}" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-600 transition-all duration-300" ${actif ? 'checked' : ''} onchange="toggleItem('${type}', ${ligne}, this)"/>
+                            <label for="toggle-${type}-${ligne}" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-700 cursor-pointer transition-colors duration-300"></label>
+                        </div>
+                        <!-- Bouton Poubelle -->
+                        <button onclick="supprimerItem('${type}', ${ligne}, '${titre.replace(/'/g, "\\'")}')" class="text-slate-500 hover:text-red-400 p-1.5 hover:bg-slate-700/50 rounded-lg transition-colors" title="Supprimer définitivement">
+                            <i class="ph ph-trash text-lg"></i>
+                        </button>
                     </div>
                 </div>
             `;
@@ -420,7 +444,7 @@
             const container = document.getElementById('liste-gestion-tournois');
             container.innerHTML = "";
             donneesGlobales.tournois.forEach(t => {
-                container.innerHTML += createToggleRow(t.nom, `ID: ${t.id}`, t.actif, t.ligne, 'tournoi');
+                container.innerHTML += createToggleRow(t.nom, `ID: ${t.id}`, t.actif, t.ligne, 'tournoi', `https://tcg.ravensburgerplay.com/events/${t.id}`);
             });
             if (donneesGlobales.tournois.length === 0) {
                 container.innerHTML = '<div class="p-4 text-center text-sm text-slate-500 italic">Aucun tournoi enregistré.</div>';
@@ -438,7 +462,6 @@
             }
         }
 
-        // Vérification automatique au démarrage si un mot de passe est déjà enregistré sur l'appareil
         if (motDePasseActuel) {
             chargerDonnees(motDePasseActuel, true);
         }
